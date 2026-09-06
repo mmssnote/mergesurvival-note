@@ -101,7 +101,16 @@
     margin-bottom:10px;
     box-shadow:0 2px 0 rgba(46,42,34,0.06);
   }
-  .card-head{display:flex;align-items:center;gap:10px;cursor:pointer;}
+  .card-head{display:flex;align-items:center;gap:10px;}
+  .drag-handle{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;}
+  .card.dragging{opacity:.5;}
+  .card-controls{display:flex;align-items:center;gap:2px;flex:none;}
+  .card-controls button{
+    border:none;background:transparent;font-size:13px;padding:3px 3px;cursor:pointer;
+    color:var(--ink-soft);line-height:1;
+  }
+  .card-controls .favbtn{font-size:18px;color:var(--line);}
+  .card-controls .favbtn.active{color:var(--amber-dark);}
   .icon-badge{
     width:34px;height:34px;border-radius:9px;background:#fff;border:1.5px solid var(--line);
     display:flex;align-items:center;justify-content:center;font-size:17px;flex:none;
@@ -110,10 +119,7 @@
   .icon-badge svg{width:20px;height:20px;}
   .card-title{flex:1;min-width:0;}
   .card-title .name{font-weight:700;font-size:14.5px;}
-  .card-title .preview{font-size:11px;color:var(--ink-soft);margin-top:1px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .chev{font-size:12px;color:var(--ink-soft);transition:transform .15s ease;flex:none;}
-  .card.open .chev{transform:rotate(90deg);}
+  .card-title .preview{font-size:11px;color:var(--ink-soft);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   .card-body{display:none;margin-top:12px;padding-top:10px;border-top:1.5px dashed var(--line);}
   .card.open .card-body{display:block;}
@@ -222,15 +228,6 @@
           <p>아이템 사용 횟수를 기록하고, 사라지기 전에 합치세요</p>
         </div>
       </div>
-      <div class="authrow" id="authrow">
-        <button id="loginBtn" class="loginbtn">🔑 Google로 로그인하고 동기화</button>
-        <div class="userchip" id="userchip">
-          <img id="userphoto" src="" alt="">
-          <span id="username"></span>
-          <button id="logoutBtn">로그아웃</button>
-        </div>
-        <p class="syncnote" id="syncnote"></p>
-      </div>
       <div class="searchbar">
         <input id="search" type="text" placeholder="아이템 이름 검색 (예: 건전지, 증류기)">
       </div>
@@ -240,7 +237,7 @@
         <span><i class="dot" style="background:var(--rust)"></i>곧 사라짐(펑)</span>
         <span><i class="dot" style="background:var(--broken)"></i>고장</span>
       </div>
-      <p class="tip">💡 ＋ 버튼을 꾹 누르면 연속으로 올라가요 · 📦 버튼으로 창고/보드 구분</p>
+      <p class="tip">💡 ＋ 버튼을 꾹 누르면 연속으로 올라가요 · 📦 버튼으로 창고/보드 구분 · ★로 즐겨찾기 · 이름 부분을 길게 눌러서 순서 변경</p>
     </div>
   </header>
   <div class="stickybar">
@@ -253,6 +250,15 @@
   <footer>
     <button class="resetbtn" id="resetAll">전체 기록 초기화</button>
     <p class="savehint">기록은 이 브라우저에 자동 저장돼요</p>
+    <div class="authrow" id="authrow">
+      <button id="loginBtn" class="loginbtn">🔑 Google로 로그인하고 동기화</button>
+      <div class="userchip" id="userchip">
+        <img id="userphoto" src="" alt="">
+        <span id="username"></span>
+        <button id="logoutBtn">로그아웃</button>
+      </div>
+      <p class="syncnote" id="syncnote"></p>
+    </div>
   </footer>
 </div>
 
@@ -278,8 +284,6 @@ let currentUser = null;
 // type: 'chain'(단계 합체), 'single'(단일), 'repairgroup'(증류기/발전기형)
 const DB = [
   // ---------- 생산 아이템 ----------
-  {id:'disaster', cat:'생산', icon:'🗃', name:'재난지원상자', type:'single',
-    stages:[{label:'',max:10,note:'펑 시 생산가능물품 1개씩 전부 획득'}]},
   {id:'foodbox', cat:'생산', icon:'📦', name:'식품상자', type:'chain',
     stages:[{label:'1단계',max:10},{label:'2단계',max:21},{label:'3단계',max:32},{label:'4단계',max:43},{label:'5단계',max:55}]},
   {id:'battery', cat:'생산', icon:'⚡', name:'건전지', type:'chain',
@@ -304,18 +308,19 @@ const DB = [
   {id:'vest', cat:'생산', icon:'🦺', name:'탐험 조끼', type:'chain',
     stages:[{label:'소',max:14},{label:'중',max:29},{label:'대',max:60}]},
   {id:'furniture', cat:'생산', icon:'🪑', name:'부서진 가구', type:'single', stages:[{label:'',max:15}]},
-  {id:'car', cat:'생산', icon:'🚗', name:'방치된 차량', type:'single', stages:[{label:'',max:15}]},
+  {id:'car', cat:'생산', icon:'🚗', name:'방치된 고철', type:'single', stages:[{label:'',max:15}]},
   {id:'fishingrod', cat:'생산', icon:'🎣', name:'낚시대', type:'single', stages:[{label:'',max:3}]},
   {id:'beenet', cat:'생산', icon:'🏸', name:'채집망 (벌)', type:'single', stages:[{label:'',max:7}]},
   {id:'dandelion', cat:'생산', icon:'🌼', name:'민들레 홀씨', type:'single', stages:[{label:'',max:7,note:'씨앗 3개 · 홀씨 4개'}]},
   {id:'bee', cat:'생산', icon:'🐝', name:'꿀벌', type:'single', stages:[{label:'3단계',max:7}]},
   {id:'hive', cat:'생산', icon:'🍯', name:'벌집', type:'chain',
     stages:[{label:'6단계',max:10},{label:'7단계',max:23}]},
-  {id:'eggbasket', cat:'생산', icon:'🥚', name:'계란바구니', type:'chain',
+  {id:'eggbasket', cat:'생산', icon:'🥚', name:'달걀 꾸러미', type:'chain',
     stages:[{label:'소',max:2},{label:'중',max:6},{label:'대',max:15}]},
-  {id:'wheat', cat:'생산', icon:'🌾', name:'밀', type:'single', stages:[{label:'',max:30}]},
-  {id:'straw', cat:'생산', icon:'👒', name:'밀짚', type:'single', stages:[{label:'',max:15}]},
-  {id:'dough', cat:'생산', icon:'🫓', name:'빵 반죽', type:'single', stages:[{label:'',max:5}]},
+  {id:'wheat', cat:'생산', icon:'🌾', name:'수확한 밀', type:'single', stages:[{label:'',max:30}]},
+  {id:'straw', cat:'생산', icon:'👒', name:'밀짚 더미', type:'single', stages:[{label:'',max:15}]},
+  {id:'dough', cat:'생산', icon:'🫓', name:'반죽 그릇', type:'single', stages:[{label:'',max:5}]},
+  {id:'woodpile', cat:'생산', icon:'🪵', name:'나무더미', type:'single', stages:[{label:'',max:10}]},
   {id:'apple', cat:'생산', icon:'🍎', name:'사과 바구니', type:'single', stages:[{label:'',max:5}]},
   {id:'corn', cat:'생산', icon:'🌽', name:'옥수수 바구니', type:'single', stages:[{label:'',max:7}]},
   {id:'potato', cat:'생산', icon:'🥔', name:'감자 상자', type:'single', stages:[{label:'',max:17}]},
@@ -368,6 +373,7 @@ const ICONS = {
   hive:'<path d="M4 20c0-7 3-13 8-13s8 6 8 13z" fill="#E3A94A"/><path d="M8 20v-6M12 20v-9M16 20v-6" stroke="#B87F26" stroke-width="1.4"/>',
   eggbasket:'<path d="M4 11h16l-2 9H6z" fill="#C9A26B"/><path d="M4 11a8 3 0 0116 0" fill="none" stroke="#A9814F" stroke-width="1.4"/><ellipse cx="9" cy="9.3" rx="2" ry="2.6" fill="#FBF6E9" stroke="#D9C79A" stroke-width=".8"/><ellipse cx="15" cy="9.3" rx="2" ry="2.6" fill="#FBF6E9" stroke="#D9C79A" stroke-width=".8"/>',
   wheat:'<path d="M12 21V9" stroke="#8B6B4A" stroke-width="1.6" stroke-linecap="round"/><path d="M12 9l-3-2M12 9l3-2M12 12l-3-2M12 12l3-2M12 15l-3-2M12 15l3-2" stroke="#D4A72C" stroke-width="1.6" stroke-linecap="round"/>',
+  woodpile:'<rect x="3" y="14" width="18" height="4" rx="2" fill="#B5824A"/><circle cx="4.5" cy="16" r="1.6" fill="#8B6B4A"/><circle cx="19.5" cy="16" r="1.6" fill="#8B6B4A"/><rect x="4" y="8" width="16" height="4" rx="2" fill="#C79A5B"/><circle cx="5.5" cy="10" r="1.6" fill="#96693C"/><circle cx="18.5" cy="10" r="1.6" fill="#96693C"/>',
   straw:'<ellipse cx="12" cy="15" rx="9" ry="2" fill="#E3C77A"/><path d="M7 15c0-5 2-9 5-9s5 4 5 9z" fill="#F0D98C" stroke="#C9A227" stroke-width="1"/>',
   dough:'<path d="M4 16c0-5 3-9 8-9s8 4 8 9-4 4-8 4-8 1-8-4z" fill="#E8CB99"/><path d="M9 10l1 4M15 10l-1 4" stroke="#C79A5B" stroke-width="1.4" stroke-linecap="round"/>',
   apple:'<path d="M12 8c-3-3-8-1-8 4 0 5 4 9 8 9s8-4 8-9c0-5-5-7-8-4z" fill="#D8583A"/><path d="M12 8V4" stroke="#8B6B4A" stroke-width="1.4" stroke-linecap="round"/><path d="M12 4c1-1 2-1 3-1" stroke="#7A9E6E" stroke-width="1.6" stroke-linecap="round"/>',
@@ -390,6 +396,9 @@ function iconMarkup(fam){
 
 /* ---------------- 상태 ---------------- */
 let instances = {}; // key: familyId or familyId__variantIdx -> array of {id,stage,count,broken,cycles}
+let favorites = new Set(); // 즐겨찾기한 family id
+let customOrder = []; // 사용자가 정한 아이템 순서 (family id 배열)
+let reorderMode = false;
 let curCat = '전체';
 let curSub = null;
 let query = '';
@@ -420,17 +429,44 @@ async function localSet(value){
   try{ localStorage.setItem(LOCAL_KEY, value); }catch(e){}
 }
 
-async function loadState(){
+function applyLoadedState(json){
   try{
-    const v = await localGet();
-    if(v) instances = JSON.parse(v);
+    const parsed = JSON.parse(json);
+    if(parsed && typeof parsed==='object' && 'instances' in parsed){
+      instances = parsed.instances || {};
+      favorites = new Set(parsed.favorites || []);
+      customOrder = parsed.order || [];
+    } else {
+      instances = parsed || {}; // 예전 저장 형식 호환
+    }
   }catch(e){ instances = {}; }
+  const dbIds = DB.map(f=>f.id);
+  customOrder = customOrder.filter(id=>dbIds.includes(id));
+  // 새로 추가된 아이템은 맨 뒤가 아니라, DB상 원래 순서에서 바로 앞에 있던(이미 목록에 있는) 아이템 뒤에 끼워넣기
+  dbIds.forEach((id, dbIdx)=>{
+    if(customOrder.includes(id)) return;
+    let insertAfter = -1;
+    for(let i=dbIdx-1; i>=0; i--){
+      const idx = customOrder.indexOf(dbIds[i]);
+      if(idx!==-1){ insertAfter = idx; break; }
+    }
+    customOrder.splice(insertAfter+1, 0, id);
+  });
+}
+function currentStateJson(){
+  return JSON.stringify({instances, favorites:[...favorites], order:customOrder});
+}
+
+async function loadState(){
+  const v = await localGet();
+  if(v) applyLoadedState(v);
+  else applyLoadedState('{}');
 }
 let saveTimer=null;
 function saveState(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async ()=>{
-    const json = JSON.stringify(instances);
+    const json = currentStateJson();
     try{ await localSet(json); }catch(e){ console.error('로컬 저장 실패', e); }
     if(currentUser){
       try{ await setDoc(doc(db,'users',currentUser.uid), {data: json, updatedAt: Date.now()}, {merge:true}); }
@@ -610,60 +646,163 @@ function renderRepairGroup(fam){
   return html;
 }
 
-function render(){
-  renderTabs();
-  const content = document.getElementById('content');
+function sortByCustomOrder(list){
+  return [...list].sort((a,b)=> customOrder.indexOf(a.id)-customOrder.indexOf(b.id));
+}
+function getVisibleFamilies(){
   let families = DB.filter(f=>{
     if(curCat!=='전체' && f.cat!==curCat) return false;
     if(curCat==='우표' && curSub && f.sub!==curSub) return false;
     if(query && !f.name.toLowerCase().includes(query.toLowerCase())) return false;
     return true;
   });
-
-  if(families.length===0){
-    content.innerHTML = `<div class="empty">해당하는 아이템이 없어요.</div>`;
-    return;
-  }
-
-  // group by section label
-  let html='';
-  let lastSection = null;
-  families.forEach(fam=>{
-    const sectionLabel = fam.cat==='생산' ? '생산 아이템' : ('우표 스토리 · ' + (fam.sub||''));
-    if(sectionLabel!==lastSection && curCat==='전체'){
-      html += `<div class="section-label">${sectionLabel}</div>`;
-      lastSection = sectionLabel;
+  const favs = sortByCustomOrder(families.filter(f=>favorites.has(f.id)));
+  const rest = sortByCustomOrder(families.filter(f=>!favorites.has(f.id)));
+  return {favs, rest};
+}
+function toggleFavorite(id){
+  if(favorites.has(id)) favorites.delete(id); else favorites.add(id);
+  saveState(); render();
+}
+function moveFamily(id, dir){
+  const {favs, rest} = getVisibleFamilies();
+  const list = favorites.has(id) ? favs : rest;
+  const idx = list.findIndex(f=>f.id===id);
+  const swapIdx = idx+dir;
+  if(swapIdx<0 || swapIdx>=list.length) return;
+  const idB = list[swapIdx].id;
+  const iA = customOrder.indexOf(id), iB = customOrder.indexOf(idB);
+  [customOrder[iA], customOrder[iB]] = [customOrder[iB], customOrder[iA]];
+  saveState(); render();
+}
+let dragState = null; // {id}
+function startDrag(id){
+  dragState = { id };
+  render();
+}
+function handleDragMove(clientY){
+  if(!dragState) return;
+  const cardEl = document.getElementById('card-'+dragState.id);
+  if(!cardEl || !cardEl.parentElement) return;
+  const cards = [...cardEl.parentElement.querySelectorAll('.card')];
+  const myIdx = cards.indexOf(cardEl);
+  if(myIdx>0){
+    const above = cards[myIdx-1];
+    const aboveId = above.id.replace('card-','');
+    if(favorites.has(aboveId)===favorites.has(dragState.id)){
+      const r = above.getBoundingClientRect();
+      if(clientY < r.top + r.height*0.4){ moveFamily(dragState.id, -1); return; }
     }
-    const isOpen = openCards.has(fam.id);
-    html += `<div class="card ${isOpen?'open':''}" id="card-${fam.id}">
-      <div class="card-head" data-toggle="${fam.id}">
-        <div class="icon-badge">${fam.icon}</div>
-        <div class="card-title">
-          <div class="name">${fam.name}</div>
-          <div class="preview">${familyPreview(fam)}</div>
+  }
+  if(myIdx>=0 && myIdx < cards.length-1){
+    const below = cards[myIdx+1];
+    const belowId = below.id.replace('card-','');
+    if(favorites.has(belowId)===favorites.has(dragState.id)){
+      const r = below.getBoundingClientRect();
+      if(clientY > r.top + r.height*0.6){ moveFamily(dragState.id, 1); }
+    }
+  }
+}
+function endDrag(){
+  dragState = null;
+  saveState(); render();
+}
+function wireDragHandles(content){
+  content.querySelectorAll('.drag-handle').forEach(el=>{
+    el.addEventListener('pointerdown', (e)=>{
+      if(dragState) return;
+      const id = el.dataset.toggle;
+      const startX = e.clientX, startY = e.clientY;
+      let moved = false;
+      let longPressTimer = setTimeout(()=>{ longPressTimer=null; startDrag(id); }, 420);
+      const onMove = (ev)=>{
+        if(!moved && (Math.abs(ev.clientX-startX)>10 || Math.abs(ev.clientY-startY)>10)){
+          moved = true;
+          if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer=null; }
+        }
+        if(dragState && dragState.id===id) handleDragMove(ev.clientY);
+      };
+      const onUp = ()=>{
+        document.removeEventListener('pointermove', onMove);
+        if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer=null; }
+        if(dragState && dragState.id===id){
+          endDrag();
+        } else if(!moved){
+          if(openCards.has(id)) openCards.delete(id); else openCards.add(id);
+          render();
+        }
+      };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp, {once:true});
+    });
+  });
+}
+function cardHtml(fam, groupList, idx){
+  const isOpen = openCards.has(fam.id);
+  const isFav = favorites.has(fam.id);
+  const isDragging = dragState && dragState.id===fam.id;
+  return `<div class="card ${isOpen?'open':''} ${isDragging?'dragging':''}" id="card-${fam.id}">
+      <div class="card-head">
+        <div class="drag-handle" data-toggle="${fam.id}">
+          <div class="icon-badge">${fam.icon}</div>
+          <div class="card-title">
+            <div class="name">${fam.name}</div>
+            <div class="preview">${familyPreview(fam)}</div>
+          </div>
         </div>
-        <div class="chev">▶</div>
+        <div class="card-controls">
+          <button class="favbtn ${isFav?'active':''}" data-fav="${fam.id}" title="즐겨찾기">${isFav?'★':'☆'}</button>
+        </div>
       </div>
       <div class="card-body">
         ${fam.type==='chain'?renderChain(fam):fam.type==='single'?renderSingle(fam):renderRepairGroup(fam)}
       </div>
     </div>`;
+}
+function render(){
+  renderTabs();
+  const content = document.getElementById('content');
+  const {favs, rest} = getVisibleFamilies();
+
+  if(favs.length+rest.length===0){
+    content.innerHTML = `<div class="empty">해당하는 아이템이 없어요.</div>`;
+    return;
+  }
+
+  let html='';
+  if(favs.length){
+    html += `<div class="section-label">⭐ 즐겨찾기</div>`;
+    favs.forEach((fam,i)=>{ html += cardHtml(fam, favs, i); });
+  }
+  let lastSection = null;
+  rest.forEach((fam,i)=>{
+    const sectionLabel = fam.cat==='생산' ? '생산 아이템' : ('우표 스토리 · ' + (fam.sub||''));
+    if(sectionLabel!==lastSection && curCat==='전체'){
+      html += `<div class="section-label">${sectionLabel}</div>`;
+      lastSection = sectionLabel;
+    }
+    html += cardHtml(fam, rest, i);
   });
   content.innerHTML = html;
-
-  content.querySelectorAll('[data-toggle]').forEach(el=>{
-    el.onclick=()=>{
-      const id = el.dataset.toggle;
-      if(openCards.has(id)) openCards.delete(id); else openCards.add(id);
-      render();
-    };
-  });
 
   content.querySelectorAll('[data-act]').forEach(el=>{
     if(el.dataset.act==='tap') return; // 탭/꾹누르기는 별도 포인터 핸들러가 처리
     el.addEventListener('click', (e)=>{
       e.stopPropagation();
       handleAction(el.dataset);
+    });
+  });
+
+  wireDragHandles(content);
+
+  content.querySelectorAll('[data-fav]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); toggleFavorite(el.dataset.fav); });
+  });
+  content.querySelectorAll('.card-body').forEach(body=>{
+    body.addEventListener('click', (e)=>{
+      if(e.target.closest('button, .addchip, .chip, input, a')) return;
+      const cardId = body.closest('.card').id.replace('card-','');
+      if(openCards.has(cardId)){ openCards.delete(cardId); render(); }
     });
   });
 }
@@ -865,10 +1004,10 @@ onAuthStateChanged(auth, async (user)=>{
     try{
       const snap = await getDoc(doc(db,'users',user.uid));
       if(snap.exists() && snap.data().data){
-        instances = JSON.parse(snap.data().data);
-        await localSet(JSON.stringify(instances));
+        applyLoadedState(snap.data().data);
+        await localSet(currentStateJson());
       } else {
-        await setDoc(doc(db,'users',user.uid), {data: JSON.stringify(instances), updatedAt: Date.now()});
+        await setDoc(doc(db,'users',user.uid), {data: currentStateJson(), updatedAt: Date.now()});
       }
       render();
     }catch(e){
