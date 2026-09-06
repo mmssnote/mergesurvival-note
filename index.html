@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>머지 서바이벌 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDE3C8;
+    --card:#FBF6E9;
+    --ink:#2E2A22;
+    --ink-soft:#6b6252;
+    --moss:#4F7355;
+    --moss-dark:#3A5540;
+    --amber:#D89A3D;
+    --amber-dark:#B87F26;
+    --rust:#C1502E;
+    --rust-dark:#9C3D22;
+    --wood:#8B6B4A;
+    --broken:#6E7480;
+    --line: rgba(46,42,34,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top, rgba(255,255,255,0.35), transparent 60%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 14px;}
+
+  header.top{
+    background:var(--paper);
+    padding:14px 0 6px;
+  }
+  .stickybar{
+    position:sticky;top:0;z-index:20;
+    background:var(--paper);
+    padding:8px 0 8px;
+    border-bottom:2px dashed var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 2px;}
+  .brand .badge{
+    width:40px;height:40px;border-radius:50%;
+    background:var(--moss);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:'Jua',sans-serif;font-size:20px;flex:none;
+    box-shadow:0 2px 0 var(--moss-dark);
+  }
+  .brand h1{font-family:'Jua',sans-serif;font-weight:400;font-size:19px;margin:0;letter-spacing:.2px;}
+  .brand p{margin:1px 0 0;font-size:11.5px;color:var(--ink-soft);}
+
+  .searchbar{margin-top:10px;position:relative;}
+  .searchbar input{
+    width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--line);
+    background:var(--card);font-family:inherit;font-size:13.5px;color:var(--ink);
+  }
+  .searchbar input:focus{outline:2px solid var(--moss);outline-offset:1px;}
+
+  .tabs{display:flex;gap:6px;margin-top:2px;overflow-x:auto;padding-bottom:2px;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:none;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);
+    background:var(--card);font-size:12.5px;font-weight:600;color:var(--ink-soft);
+    cursor:pointer;white-space:nowrap;
+  }
+  .tab.active{background:var(--moss);border-color:var(--moss-dark);color:#fff;}
+
+  .subtabs{display:flex;gap:6px;margin-top:8px;overflow-x:auto;}
+  .subtabs::-webkit-scrollbar{display:none;}
+  .subtab{
+    flex:none;padding:4px 10px;border-radius:999px;border:1.5px dashed var(--wood);
+    background:transparent;font-size:11.5px;font-weight:600;color:var(--wood);cursor:pointer;white-space:nowrap;
+  }
+  .subtab.active{background:var(--amber);border-style:solid;border-color:var(--amber-dark);color:#fff;}
+
+  .legend{
+    display:flex;gap:10px;flex-wrap:wrap;margin:10px 2px 2px;font-size:10.5px;color:var(--ink-soft);
+  }
+  .legend span{display:inline-flex;align-items:center;gap:4px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .tip{font-size:10.5px;color:var(--ink-soft);margin:6px 2px 0;}
+
+  .section-label{
+    display:flex;align-items:center;gap:8px;margin:20px 2px 10px;
+    font-family:'Jua',sans-serif;font-size:14px;color:var(--wood);
+  }
+  .section-label::after{content:"";flex:1;height:0;border-top:2px dashed var(--line);}
+
+  .card{
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-left:5px dashed var(--wood);
+    border-radius:12px;
+    padding:12px 12px 12px 14px;
+    margin-bottom:10px;
+    box-shadow:0 2px 0 rgba(46,42,34,0.06);
+  }
+  .card-head{display:flex;align-items:center;gap:10px;cursor:pointer;}
+  .icon-badge{
+    width:34px;height:34px;border-radius:9px;background:#fff;border:1.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:17px;flex:none;
+    color:var(--wood);
+  }
+  .icon-badge svg{width:20px;height:20px;}
+  .card-title{flex:1;min-width:0;}
+  .card-title .name{font-weight:700;font-size:14.5px;}
+  .card-title .preview{font-size:11px;color:var(--ink-soft);margin-top:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .chev{font-size:12px;color:var(--ink-soft);transition:transform .15s ease;flex:none;}
+  .card.open .chev{transform:rotate(90deg);}
+
+  .card-body{display:none;margin-top:12px;padding-top:10px;border-top:1.5px dashed var(--line);}
+  .card.open .card-body{display:block;}
+
+  .stage-block{margin-bottom:14px;}
+  .stage-block:last-child{margin-bottom:2px;}
+  .stage-title{display:flex;align-items:baseline;gap:6px;font-size:12.5px;font-weight:700;margin-bottom:6px;}
+  .stage-title .max{color:var(--ink-soft);font-weight:500;font-size:11.5px;}
+  .stage-note{font-size:10.5px;color:var(--amber-dark);margin:-3px 0 6px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .chip{
+    position:relative;
+    min-width:62px;
+    border-radius:9px;
+    background:#fff;
+    border:1.5px solid var(--moss);
+    padding:6px 6px 5px;
+    text-align:center;
+    user-select:none;
+  }
+  .chip.stored{opacity:.6; border-style:dashed;}
+  .loc-tag{
+    position:absolute;top:-8px;left:-6px;font-size:8.5px;font-weight:700;color:#fff;
+    background:var(--wood);border-radius:5px;padding:1px 4px;line-height:1.4;
+  }
+  .chip .count{font-family:'Jua',sans-serif;font-size:16px;line-height:1;color:var(--moss-dark);}
+  .chip .bar{height:4px;border-radius:3px;background:var(--line);margin-top:4px;overflow:hidden;}
+  .chip .bar i{display:block;height:100%;background:var(--moss);}
+  .chip .plusbtn{
+    display:block;width:100%;margin-top:5px;padding:4px 0;border:none;border-radius:6px;
+    background:var(--moss);color:#fff;font-family:'Jua',sans-serif;font-size:13px;cursor:pointer;
+    touch-action:none;
+  }
+  .chip .ctrl{display:flex;justify-content:space-between;margin-top:4px;gap:3px;}
+  .chip .ctrl button{
+    flex:1;border:none;background:#F1EBDA;color:var(--ink-soft);font-size:11px;border-radius:5px;
+    padding:3px 2px;cursor:pointer;line-height:1.3;
+  }
+  .chip .ctrl button.confirm{background:var(--rust);color:#fff;font-weight:700;}
+  .chip.ready{border-color:var(--amber-dark);background:#FFF6E4;}
+  .chip.ready .count{color:var(--amber-dark);}
+  .chip.ready .bar i{background:var(--amber);}
+  .chip.ready .plusbtn{background:var(--amber-dark);}
+  .chip.pop{border-color:var(--rust-dark);background:#FBE9E3;animation:pulse 1.4s infinite;}
+  .chip.pop .count{color:var(--rust-dark);}
+  .chip.pop .bar i{background:var(--rust);}
+  .chip.pop .plusbtn{background:var(--rust-dark);}
+  .chip.broken{border-color:var(--broken);background:#EDEEF0;}
+  .chip.broken .count{color:var(--broken);}
+  .chip.broken .plusbtn{background:var(--broken);}
+  .chip .tag{position:absolute;top:-8px;right:-6px;font-size:13px;}
+  .cycle{font-size:9.5px;color:var(--ink-soft);margin-top:3px;}
+  .stored-label{font-size:10.5px;color:var(--wood);font-weight:700;margin:8px 0 4px;}
+
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(193,80,46,.35);}50%{box-shadow:0 0 0 5px rgba(193,80,46,0);}}
+
+  .addchip{
+    min-width:44px;border-radius:10px;border:1.5px dashed var(--ink-soft);
+    color:var(--ink-soft);display:flex;align-items:center;justify-content:center;
+    padding:6px 10px;font-size:18px;cursor:pointer;background:transparent;
+  }
+
+  .actionrow{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .btn-sm{
+    border:none;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:700;
+    cursor:pointer;color:#fff;
+  }
+  .btn-merge{background:var(--moss);}
+  .btn-repair{background:var(--broken);}
+  .btn-harvest{background:#3D74A8;}
+
+  .empty{text-align:center;color:var(--ink-soft);font-size:12.5px;padding:30px 10px;}
+
+  footer{
+    max-width:480px;margin:26px auto 0;padding:0 14px;text-align:center;
+  }
+  .resetbtn{
+    background:transparent;border:1.5px solid var(--rust);color:var(--rust-dark);
+    border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;
+  }
+  .savehint{font-size:10.5px;color:var(--ink-soft);margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div id="collapsible">
+      <div class="brand">
+        <div class="badge">⛺</div>
+        <div>
+          <h1>머지 서바이벌 노트</h1>
+          <p>아이템 사용 횟수를 기록하고, 사라지기 전에 합치세요</p>
+        </div>
+      </div>
+      <div class="searchbar">
+        <input id="search" type="text" placeholder="아이템 이름 검색 (예: 건전지, 증류기)">
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--moss)"></i>진행중</span>
+        <span><i class="dot" style="background:var(--amber)"></i>합칠 시간</span>
+        <span><i class="dot" style="background:var(--rust)"></i>곧 사라짐(펑)</span>
+        <span><i class="dot" style="background:var(--broken)"></i>고장</span>
+      </div>
+      <p class="tip">💡 ＋ 버튼을 꾹 누르면 연속으로 올라가요 · 📦 버튼으로 창고/보드 구분</p>
+    </div>
+  </header>
+  <div class="stickybar">
+    <div class="tabs" id="cattabs"></div>
+    <div class="subtabs" id="subtabs" style="display:none;"></div>
+  </div>
+
+  <main id="content"></main>
+
+  <footer>
+    <button class="resetbtn" id="resetAll">전체 기록 초기화</button>
+    <p class="savehint">기록은 이 브라우저에 자동 저장돼요</p>
+  </footer>
+</div>
+
+<script>
+/* ---------------- 데이터 정의 ---------------- */
+// type: 'chain'(단계 합체), 'single'(단일), 'repairgroup'(증류기/발전기형)
+const DB = [
+  // ---------- 생산 아이템 ----------
+  {id:'disaster', cat:'생산', icon:'🗃', name:'재난지원상자', type:'single',
+    stages:[{label:'',max:10,note:'펑 시 생산가능물품 1개씩 전부 획득'}]},
+  {id:'foodbox', cat:'생산', icon:'📦', name:'식품상자', type:'chain',
+    stages:[{label:'1단계',max:10},{label:'2단계',max:21},{label:'3단계',max:32},{label:'4단계',max:43},{label:'5단계',max:55}]},
+  {id:'battery', cat:'생산', icon:'⚡', name:'건전지', type:'chain',
+    stages:[{label:'소',max:4},{label:'중',max:9},{label:'대',max:20}]},
+  {id:'piggy', cat:'생산', icon:'💰', name:'저금통', type:'chain',
+    stages:[{label:'소',max:9},{label:'중',max:19},{label:'대',max:40}]},
+  {id:'distiller', cat:'생산', icon:'🥛', name:'증류기', type:'chain', repair:true,
+    stages:[
+      {label:'4단계', max:15, note:'15회때 이슬 4개 받고 합치기'},
+      {label:'5단계', max:15, note:'15회때 스포이드 4개 받고 합치기'},
+      {label:'6단계', max:15, note:'15회때 물컵 4개 받고 합치기'},
+      {label:'7단계', max:15, note:'바가지 5개 x 15회 = 고장 · 최종 단계(수리만 가능)'},
+    ]},
+  {id:'generator', cat:'생산', icon:'🔋', name:'발전기', type:'chain', repair:true,
+    stages:[
+      {label:'4단계', max:15, note:'15회 때 2개 받고 합치기'},
+      {label:'5단계', max:15, note:'15회 때 6개 받고 합치기'},
+      {label:'6단계', max:15, note:'15개 x 15회 = 고장 · 최종 단계(수리만 가능)'},
+    ]},
+  {id:'pencilcase', cat:'생산', icon:'✏️', name:'나무필통', type:'chain',
+    stages:[{label:'소',max:19},{label:'중',max:39},{label:'대',max:80}]},
+  {id:'vest', cat:'생산', icon:'🦺', name:'탐험 조끼', type:'chain',
+    stages:[{label:'소',max:14},{label:'중',max:29},{label:'대',max:60}]},
+  {id:'furniture', cat:'생산', icon:'🪑', name:'부서진 가구', type:'single', stages:[{label:'',max:15}]},
+  {id:'car', cat:'생산', icon:'🚗', name:'방치된 차량', type:'single', stages:[{label:'',max:15}]},
+  {id:'fishingrod', cat:'생산', icon:'🎣', name:'낚시대', type:'single', stages:[{label:'',max:3}]},
+  {id:'beenet', cat:'생산', icon:'🏸', name:'채집망 (벌)', type:'single', stages:[{label:'',max:7}]},
+  {id:'dandelion', cat:'생산', icon:'🌼', name:'민들레 홀씨', type:'single', stages:[{label:'',max:7,note:'씨앗 3개 · 홀씨 4개'}]},
+  {id:'bee', cat:'생산', icon:'🐝', name:'꿀벌', type:'single', stages:[{label:'3단계',max:7}]},
+  {id:'hive', cat:'생산', icon:'🍯', name:'벌집', type:'chain',
+    stages:[{label:'6단계',max:10},{label:'7단계',max:23}]},
+  {id:'eggbasket', cat:'생산', icon:'🥚', name:'계란바구니', type:'chain',
+    stages:[{label:'소',max:2},{label:'중',max:6},{label:'대',max:15}]},
+  {id:'wheat', cat:'생산', icon:'🌾', name:'밀', type:'single', stages:[{label:'',max:30}]},
+  {id:'straw', cat:'생산', icon:'👒', name:'밀짚', type:'single', stages:[{label:'',max:15}]},
+  {id:'dough', cat:'생산', icon:'🫓', name:'빵 반죽', type:'single', stages:[{label:'',max:5}]},
+  {id:'apple', cat:'생산', icon:'🍎', name:'사과 바구니', type:'single', stages:[{label:'',max:5}]},
+  {id:'corn', cat:'생산', icon:'🌽', name:'옥수수 바구니', type:'single', stages:[{label:'',max:7}]},
+  {id:'potato', cat:'생산', icon:'🥔', name:'감자 상자', type:'single', stages:[{label:'',max:17}]},
+  {id:'milkbucket', cat:'생산', icon:'🍼', name:'우유 양동이', type:'single', stages:[{label:'',max:11}]},
+  {id:'milkproduct', cat:'생산', icon:'🧀', name:'우유 생산품', type:'chain',
+    stages:[{label:'3단계',max:1},{label:'4단계',max:1},{label:'5단계',max:1}]},
+
+  // ---------- 우표 스토리 : 공통 ----------
+  {id:'staplebox', cat:'우표', sub:'공통', icon:'📦', name:'생필품상자', type:'single', stages:[{label:'',max:5}]},
+
+  // ---------- 우표 스토리 : 이든 ----------
+  {id:'toybox', cat:'우표', sub:'이든', icon:'🎁', name:'장난감상자', type:'chain',
+    stages:[{label:'3레벨',max:4},{label:'4레벨',max:12}]},
+  {id:'snackbox', cat:'우표', sub:'이든', icon:'🍭', name:'간식상자', type:'chain',
+    stages:[{label:'3레벨',max:3},{label:'4레벨',max:8}]},
+
+  // ---------- 우표 스토리 : 소피아 ----------
+  // (등록된 아이템 없음 - 추후 추가)
+
+  // ---------- 우표 스토리 : 조이 ----------
+  {id:'jewelbox', cat:'우표', sub:'조이', icon:'💎', name:'보석함', type:'single', stages:[{label:'',max:15}]},
+  {id:'sketchbook', cat:'우표', sub:'조이', icon:'🗒️', name:'스케치북', type:'single', stages:[{label:'',max:7}]},
+
+  // ---------- 우표 스토리 : 스마트 ----------
+  {id:'barcode', cat:'우표', sub:'스마트', icon:'💵', name:'바코드 · 포스기 · 카운터', type:'chain',
+    stages:[{label:'바코드(3)',max:2},{label:'포스기(4)',max:5},{label:'카운터(5)',max:11}]},
+  {id:'videotape', cat:'우표', sub:'스마트', icon:'📼', name:'비디오테이프 · 녹음기 · 공중전화', type:'chain',
+    stages:[{label:'비디오테이프(3)',max:3},{label:'녹음기(4)',max:5,note:'정확한 횟수 미확인 - 연필 아이콘으로 수정하세요'},{label:'공중전화(5)',max:15}]},
+];
+
+const SUBGROUPS = ['공통','이든','소피아','조이','스마트'];
+
+/* 아이템별 컬러 아이콘 (자체 제작 - 게임 원본 아트가 아닌 대체용 일러스트) */
+const ICONS = {
+  disaster:'<path d="M3 9h18v10H3z" fill="#D9B382"/><path d="M3 9l3-5h12l3 5z" fill="#B98A54"/><rect x="11" y="9" width="2" height="10" fill="#8B6B4A"/>',
+  foodbox:'<path d="M3 9h18v10H3z" fill="#D9B382"/><path d="M3 9l3-5h12l3 5z" fill="#B98A54"/><rect x="11" y="9" width="2" height="10" fill="#8B6B4A"/>',
+  staplebox:'<path d="M3 9h18v10H3z" fill="#D9B382"/><path d="M3 9l3-5h12l3 5z" fill="#B98A54"/><rect x="11" y="9" width="2" height="10" fill="#8B6B4A"/>',
+  battery:'<rect x="7" y="4" width="10" height="17" rx="2" fill="#5C8A63"/><rect x="10" y="2" width="4" height="2" fill="#3A5540"/><path d="M9 12h6M12 9v6" stroke="#EFF7EC" stroke-width="1.8" stroke-linecap="round"/>',
+  piggy:'<path d="M4 13c0-4 3-6 8-6s8 2 8 6-3 6-8 6-8-2-8-6z" fill="#EFAFC0"/><path d="M9 8V6h2" stroke="#C97389" stroke-width="1.4" fill="none" stroke-linecap="round"/><rect x="7.2" y="12.4" width="2" height=".9" rx=".4" fill="#C97389"/><rect x="5" y="19" width="2" height="3" rx="1" fill="#DC93A6"/><rect x="17" y="19" width="2" height="3" rx="1" fill="#DC93A6"/>',
+  distiller:'<path d="M10 3h4v5l4 8a3 3 0 01-3 5H9a3 3 0 01-3-5l4-8z" fill="#CDEDEA" stroke="#7FBDB6" stroke-width="1"/><path d="M6.4 16.6h11.2a3 3 0 01-2.9 4.4H9.3a3 3 0 01-2.9-4.4z" fill="#4FA79E"/><rect x="9" y="3" width="6" height="2" fill="#9FB6B3"/>',
+  generator:'<circle cx="12" cy="12" r="9" fill="#EEBE55"/><path d="M13 7l-5 7h4l-1 5 6-8h-4z" fill="#B87F26"/>',
+  pencilcase:'<path d="M4 9c0-3 2-4 8-4s8 1 8 4v7c0 2-2 3-8 3s-8-1-8-3z" fill="#9BB988"/><rect x="4" y="8.3" width="16" height="1.4" fill="#5F7D52"/>',
+  vest:'<path d="M8 4l4 2 4-2 3 4-2 2v10H7V10L5 8z" fill="#EB9A4F"/><rect x="11" y="6" width="2" height="12" fill="#C97425"/><rect x="7" y="13" width="10" height="1.4" fill="#FCE2B8"/>',
+  furniture:'<path d="M6 3h10v9H6z" fill="none" stroke="#A9814F" stroke-width="1.8"/><path d="M6 12v8M16 12v8M6 16h10" stroke="#A9814F" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M10 7l2 2-2 2" stroke="#C1502E" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  car:'<path d="M4 16l2-6h12l2 6" fill="none" stroke="#5B7C99" stroke-width="1.6" stroke-linejoin="round"/><rect x="3" y="16" width="18" height="4" rx="1" fill="#5B7C99"/><circle cx="7" cy="20" r="1.6" fill="#33465A"/><circle cx="17" cy="20" r="1.6" fill="#33465A"/>',
+  fishingrod:'<path d="M4 20L18 5" stroke="#8B6B4A" stroke-width="1.8" stroke-linecap="round"/><path d="M18 5c1 4 1 8-1 12" stroke="#5B7C99" stroke-width="1.4" fill="none" stroke-linecap="round"/><circle cx="17" cy="17" r="1" fill="#B87F26"/>',
+  beenet:'<path d="M12 3l7 4v6l-7 4-7-4V7z" fill="#F0D98C" stroke="#C9A227" stroke-width="1"/><path d="M12 21v-4" stroke="#8B6B4A" stroke-width="1.8" stroke-linecap="round"/>',
+  dandelion:'<circle cx="12" cy="9" r="2" fill="#D9E28C"/><path d="M12 3v2M12 9l4-3M12 9l4 3M12 9l-4-3M12 9l-4 3" stroke="#B7C24C" stroke-width="1.4" stroke-linecap="round"/><path d="M12 11v9" stroke="#8B6B4A" stroke-width="1.6" stroke-linecap="round"/>',
+  bee:'<ellipse cx="12" cy="13" rx="4" ry="5" fill="#F2C14E"/><path d="M9 10.5h6M9 13h6M9 15.5h6" stroke="#2E2A22" stroke-width="1.3"/><ellipse cx="8" cy="9" rx="2" ry="3" fill="#EAF3F1" opacity=".85" transform="rotate(-20 8 9)"/><ellipse cx="16" cy="9" rx="2" ry="3" fill="#EAF3F1" opacity=".85" transform="rotate(20 16 9)"/>',
+  hive:'<path d="M4 20c0-7 3-13 8-13s8 6 8 13z" fill="#E3A94A"/><path d="M8 20v-6M12 20v-9M16 20v-6" stroke="#B87F26" stroke-width="1.4"/>',
+  eggbasket:'<path d="M4 11h16l-2 9H6z" fill="#C9A26B"/><path d="M4 11a8 3 0 0116 0" fill="none" stroke="#A9814F" stroke-width="1.4"/><ellipse cx="9" cy="9.3" rx="2" ry="2.6" fill="#FBF6E9" stroke="#D9C79A" stroke-width=".8"/><ellipse cx="15" cy="9.3" rx="2" ry="2.6" fill="#FBF6E9" stroke="#D9C79A" stroke-width=".8"/>',
+  wheat:'<path d="M12 21V9" stroke="#8B6B4A" stroke-width="1.6" stroke-linecap="round"/><path d="M12 9l-3-2M12 9l3-2M12 12l-3-2M12 12l3-2M12 15l-3-2M12 15l3-2" stroke="#D4A72C" stroke-width="1.6" stroke-linecap="round"/>',
+  straw:'<ellipse cx="12" cy="15" rx="9" ry="2" fill="#E3C77A"/><path d="M7 15c0-5 2-9 5-9s5 4 5 9z" fill="#F0D98C" stroke="#C9A227" stroke-width="1"/>',
+  dough:'<path d="M4 16c0-5 3-9 8-9s8 4 8 9-4 4-8 4-8 1-8-4z" fill="#E8CB99"/><path d="M9 10l1 4M15 10l-1 4" stroke="#C79A5B" stroke-width="1.4" stroke-linecap="round"/>',
+  apple:'<path d="M12 8c-3-3-8-1-8 4 0 5 4 9 8 9s8-4 8-9c0-5-5-7-8-4z" fill="#D8583A"/><path d="M12 8V4" stroke="#8B6B4A" stroke-width="1.4" stroke-linecap="round"/><path d="M12 4c1-1 2-1 3-1" stroke="#7A9E6E" stroke-width="1.6" stroke-linecap="round"/>',
+  corn:'<path d="M9 3c6 0 8 6 6 12-2 5-9 7-9 3s0-15 3-15z" fill="#EEC24A"/><path d="M9 6l2 1M9 9l3 1M9 12l3 1M9 15l2 1" stroke="#C79A2A" stroke-width="1.2"/>',
+  potato:'<path d="M5 12c0-5 4-8 8-7 4 0 6 4 5 8-1 5-5 6-9 5-3-1-4-3-4-6z" fill="#C79A6E"/><circle cx="9" cy="11" r=".7" fill="#8B6B4A"/><circle cx="13" cy="14" r=".7" fill="#8B6B4A"/>',
+  milkbucket:'<path d="M6 8h12l-2 12H8z" fill="#DCEAF4"/><path d="M6 8a6 2 0 0112 0" fill="none" stroke="#8FA9C9" stroke-width="1.4"/>',
+  milkproduct:'<path d="M3 17l9-11 9 11z" fill="#F0D27A"/><circle cx="11" cy="15" r="1" fill="#D9B85A"/><circle cx="15" cy="13" r=".8" fill="#D9B85A"/>',
+  toybox:'<rect x="4" y="9" width="16" height="11" fill="#EFA9BB"/><path d="M4 13h16" stroke="#D9738A" stroke-width="1.4"/><path d="M12 9v11" stroke="#D9738A" stroke-width="1.4"/><path d="M9 9c0-3 1-5 3-5s3 2 3 5z" fill="none" stroke="#D9738A" stroke-width="1.4"/>',
+  snackbox:'<circle cx="12" cy="8" r="5" fill="#F1A38A"/><path d="M9 6l6 4M15 6l-6 4" stroke="#E07A5F" stroke-width="1.3"/><path d="M12 13v8" stroke="#C79A5B" stroke-width="1.6" stroke-linecap="round"/>',
+  jewelbox:'<rect x="4" y="10" width="16" height="9" rx="1" fill="#C7B3E6"/><path d="M4 10l2-4h12l2 4z" fill="#9C7FC9"/><path d="M9 5l3 3 3-3" fill="none" stroke="#6E90B7" stroke-width="1.4"/>',
+  sketchbook:'<rect x="5" y="3" width="12" height="18" rx="1" fill="#B9D2E8"/><rect x="8" y="3" width="1.6" height="18" fill="#6E90B7"/><path d="M15 15l4-4 2 2-4 4h-2z" fill="#E9B949"/>',
+  barcode:'<path d="M4 4v16M7 4v16M9 4v16M13 4v16M15 4v16M18 4v16M20 4v16" stroke="#4A4A4A" stroke-width="1.6"/>',
+  videotape:'<rect x="3" y="6" width="18" height="12" rx="1" fill="#CBB99A"/><circle cx="8" cy="12" r="2.4" fill="#8B6B4A"/><circle cx="16" cy="12" r="2.4" fill="#8B6B4A"/>',
+};
+function iconMarkup(fam){
+  const inner = ICONS[fam.id];
+  if(inner) return `<svg viewBox="0 0 24 24">${inner}</svg>`;
+  return fam.icon;
+}
+
+/* ---------------- 상태 ---------------- */
+let instances = {}; // key: familyId or familyId__variantIdx -> array of {id,stage,count,broken,cycles}
+let curCat = '전체';
+let curSub = null;
+let query = '';
+const openCards = new Set();
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function keyFor(fam, variantIdx){
+  return variantIdx===undefined ? fam.id : (fam.id+'__'+variantIdx);
+}
+
+async function loadState(){
+  try{
+    const r = await window.storage.get('ms_instances', false);
+    if(r && r.value){ instances = JSON.parse(r.value); }
+  }catch(e){ instances = {}; }
+}
+let saveTimer=null;
+function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{ await window.storage.set('ms_instances', JSON.stringify(instances), false); }
+    catch(e){ console.error('저장 실패', e); }
+  }, 250);
+}
+
+function getList(k){
+  if(!instances[k]) instances[k]=[];
+  return instances[k];
+}
+
+/* ---------------- 렌더링 ---------------- */
+function renderTabs(){
+  const cattabs = document.getElementById('cattabs');
+  const cats = ['전체','생산','우표'];
+  cattabs.innerHTML = cats.map(c=>{
+    const label = c==='전체'?'전체':(c==='생산'?'생산 아이템':'우표 스토리');
+    return `<button class="tab ${curCat===c?'active':''}" data-cat="${c}">${label}</button>`;
+  }).join('');
+  cattabs.querySelectorAll('.tab').forEach(b=>{
+    b.onclick=()=>{ curCat=b.dataset.cat; curSub=null; render(); };
+  });
+
+  const subtabs = document.getElementById('subtabs');
+  if(curCat==='우표'){
+    subtabs.style.display='flex';
+    subtabs.innerHTML = `<button class="subtab ${curSub===null?'active':''}" data-sub="">전체</button>` +
+      SUBGROUPS.map(s=>`<button class="subtab ${curSub===s?'active':''}" data-sub="${s}">${s}</button>`).join('');
+    subtabs.querySelectorAll('.subtab').forEach(b=>{
+      b.onclick=()=>{ curSub = b.dataset.sub || null; render(); };
+    });
+  } else {
+    subtabs.style.display='none';
+  }
+}
+
+function familyPreview(fam){
+  if(fam.type==='repairgroup'){
+    return fam.variants.map(v=>v.max).join(' · ');
+  }
+  return fam.stages.map(s=>s.max).join(' · ');
+}
+
+function chipClass(count,max,broken,isFinalPop){
+  if(broken) return 'chip broken';
+  if(count>=max){ return isFinalPop ? 'chip pop' : 'chip ready'; }
+  return 'chip';
+}
+
+let armedDelete = null; // {k, id, timer}
+function isArmed(k,id){ return !!armedDelete && armedDelete.k===k && armedDelete.id===id; }
+function requestDelete(k,id){
+  if(isArmed(k,id)){
+    clearTimeout(armedDelete.timer);
+    instances[k] = getList(k).filter(i=>i.id!==id);
+    armedDelete=null;
+    saveState(); render();
+    return;
+  }
+  if(armedDelete){ clearTimeout(armedDelete.timer); }
+  armedDelete = {k, id, timer: setTimeout(()=>{ armedDelete=null; render(); }, 3000)};
+  render();
+}
+
+function chipHtml(k, inst, max, isFinalPop, forcedBroken){
+  const broken = forcedBroken || false;
+  const cls = chipClass(inst.count, max, broken, isFinalPop) + (inst.stored?' stored':'');
+  const pct = Math.min(100, inst.count/max*100);
+  const armed = isArmed(k, inst.id);
+  const ctrl = inst.stored
+    ? `<div class="ctrl">
+        <button data-act="loc" data-k="${k}" data-id="${inst.id}" title="보드로 꺼내기">📤</button>
+        <button class="${armed?'confirm':''}" data-act="del" data-k="${k}" data-id="${inst.id}">${armed?'삭제?':'×'}</button>
+      </div>`
+    : `<button class="plusbtn" data-act="tap" data-k="${k}" data-id="${inst.id}">＋</button>
+      <div class="ctrl">
+        <button data-act="dec" data-k="${k}" data-id="${inst.id}">−</button>
+        <button data-act="loc" data-k="${k}" data-id="${inst.id}" title="창고에 보관">📦</button>
+        <button class="${armed?'confirm':''}" data-act="del" data-k="${k}" data-id="${inst.id}">${armed?'삭제?':'×'}</button>
+      </div>`;
+  return `<div class="${cls}" data-k="${k}" data-id="${inst.id}">
+    ${broken?'<div class="tag">🔧</div>':''}
+    ${inst.stored?'<div class="loc-tag">🔒 창고</div>':''}
+    <div class="count">${inst.count}</div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    ${ctrl}
+  </div>`;
+}
+
+function renderStageChips(k, list, max, isFinalPop, isBroken){
+  const board = list.filter(i=>!i.stored);
+  const stored = list.filter(i=>i.stored);
+  let html = `<div class="chips">`;
+  board.forEach(inst=> html += chipHtml(k, inst, max, isFinalPop, isBroken && isBroken(inst)));
+  html += `<div class="addchip" data-act="add" data-k="${k}">＋</div></div>`;
+  if(stored.length){
+    html += `<div class="stored-label">📦 창고 보관 중</div><div class="chips">`;
+    stored.forEach(inst=> html += chipHtml(k, inst, max, isFinalPop, isBroken && isBroken(inst)));
+    html += `</div>`;
+  }
+  return html;
+}
+
+function renderChain(fam){
+  let html='';
+  fam.stages.forEach((st, idx)=>{
+    const k = keyFor(fam, undefined)+'__s'+idx;
+    const list = getList(k);
+    const isLast = idx===fam.stages.length-1;
+    const isFinalPop = isLast && !fam.repair;
+    const suffix = fam.repair ? ' · 고장' : (isLast?' · 펑':' · 여기까지 누르고 합치기');
+    html += `<div class="stage-block">
+      <div class="stage-title"><span>${st.label?st.label+' ':''}</span><span class="max">최대 ${st.max}회${suffix}</span></div>
+      ${st.note?`<div class="stage-note">${st.note}</div>`:''}`;
+    html += renderStageChips(k, list, st.max, isFinalPop, fam.repair?(i=>i.count>=st.max):null);
+    const nonBrokenCount = list.filter(i=> !(fam.repair && i.count>=st.max)).length;
+    const brokenCount = fam.repair ? list.filter(i=>i.count>=st.max).length : 0;
+    const actions=[];
+    if(!isLast && nonBrokenCount>=2){
+      actions.push(`<button class="btn-sm btn-merge" data-act="merge" data-k="${k}" data-fam="${fam.id}" data-idx="${idx}">🔗 2개 합쳐서 다음 단계로</button>`);
+    }
+    if(fam.repair && brokenCount>=2){
+      actions.push(`<button class="btn-sm btn-repair" data-act="repairmerge" data-k="${k}">🔧 고장 2개 합쳐서 수리</button>`);
+    }
+    if(actions.length){ html += `<div class="actionrow">${actions.join('')}</div>`; }
+    html += `</div>`;
+  });
+  return html;
+}
+
+function renderSingle(fam){
+  const st = fam.stages[0];
+  const k = keyFor(fam, undefined)+'__s0';
+  const list = getList(k);
+  let html = `<div class="stage-block">
+    <div class="stage-title"><span class="max">최대 ${st.max}회 · 펑</span></div>
+    ${st.note?`<div class="stage-note">${st.note}</div>`:''}`;
+  html += renderStageChips(k, list, st.max, true, null);
+  html += `</div>`;
+  return html;
+}
+
+function renderRepairGroup(fam){
+  let html='';
+  fam.variants.forEach((v, idx)=>{
+    const k = keyFor(fam, idx);
+    const list = getList(k);
+    const brokenList = list.filter(i=>i.broken);
+    html += `<div class="stage-block">
+      <div class="stage-title"><span>${v.label}</span><span class="max">쿨타임 ${v.max}회 → ${v.reward}${v.breakCycles?` · ${v.breakCycles}회차에 고장`:''}</span></div>
+      <div class="chips">`;
+    list.forEach(inst=>{
+      const broken = !!inst.broken;
+      const cls = chipClass(inst.count, v.max, broken);
+      html += `<div class="${cls}" data-act="tap" data-k="${k}" data-id="${inst.id}">
+        ${broken?'<div class="tag">🔧</div>':''}
+        <div class="count">${inst.count}</div>
+        <div class="bar"><i style="width:${Math.min(100,inst.count/v.max*100)}%"></i></div>
+        <div class="cycle">${inst.cycles||0}회차 완료</div>
+        <div class="ctrl">
+          <button data-act="dec" data-k="${k}" data-id="${inst.id}">−</button>
+          <button data-act="brk" data-k="${k}" data-id="${inst.id}">🔧</button>
+          <button data-act="del" data-k="${k}" data-id="${inst.id}">×</button>
+        </div>
+      </div>`;
+    });
+    html += `<div class="addchip" data-act="add" data-k="${k}">＋</div></div>`;
+    const hasHarvest = list.some(i=>!i.broken && i.count>=v.max);
+    const actions=[];
+    if(hasHarvest) actions.push(`<button class="btn-sm btn-harvest" data-act="harvest" data-k="${k}" data-max="${v.max}" data-breakcycles="${v.breakCycles||0}">🌊 수확하고 초기화</button>`);
+    if(brokenList.length>=2) actions.push(`<button class="btn-sm btn-repair" data-act="repair" data-k="${k}">🔧 고장 2개 합쳐서 수리</button>`);
+    if(actions.length) html += `<div class="actionrow">${actions.join('')}</div>`;
+    html += `</div>`;
+  });
+  return html;
+}
+
+function render(){
+  renderTabs();
+  const content = document.getElementById('content');
+  let families = DB.filter(f=>{
+    if(curCat!=='전체' && f.cat!==curCat) return false;
+    if(curCat==='우표' && curSub && f.sub!==curSub) return false;
+    if(query && !f.name.toLowerCase().includes(query.toLowerCase())) return false;
+    return true;
+  });
+
+  if(families.length===0){
+    content.innerHTML = `<div class="empty">해당하는 아이템이 없어요.</div>`;
+    return;
+  }
+
+  // group by section label
+  let html='';
+  let lastSection = null;
+  families.forEach(fam=>{
+    const sectionLabel = fam.cat==='생산' ? '생산 아이템' : ('우표 스토리 · ' + (fam.sub||''));
+    if(sectionLabel!==lastSection && curCat==='전체'){
+      html += `<div class="section-label">${sectionLabel}</div>`;
+      lastSection = sectionLabel;
+    }
+    const isOpen = openCards.has(fam.id);
+    html += `<div class="card ${isOpen?'open':''}" id="card-${fam.id}">
+      <div class="card-head" data-toggle="${fam.id}">
+        <div class="icon-badge">${fam.icon}</div>
+        <div class="card-title">
+          <div class="name">${fam.name}</div>
+          <div class="preview">${familyPreview(fam)}</div>
+        </div>
+        <div class="chev">▶</div>
+      </div>
+      <div class="card-body">
+        ${fam.type==='chain'?renderChain(fam):fam.type==='single'?renderSingle(fam):renderRepairGroup(fam)}
+      </div>
+    </div>`;
+  });
+  content.innerHTML = html;
+
+  content.querySelectorAll('[data-toggle]').forEach(el=>{
+    el.onclick=()=>{
+      const id = el.dataset.toggle;
+      if(openCards.has(id)) openCards.delete(id); else openCards.add(id);
+      render();
+    };
+  });
+
+  content.querySelectorAll('[data-act]').forEach(el=>{
+    if(el.dataset.act==='tap') return; // 탭/꾹누르기는 별도 포인터 핸들러가 처리
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      handleAction(el.dataset);
+    });
+  });
+}
+
+function findFamById(id){ return DB.find(f=>f.id===id); }
+
+function stageMaxForKey(k){
+  // key patterns: famId__sIDX  or  famId__IDX (repairgroup, no harvest needed here)
+  const parts = k.split('__');
+  const famId = parts[0];
+  const fam = findFamById(famId);
+  if(!fam) return 999999;
+  if(parts[1] && parts[1].startsWith('s')){
+    const idx = parseInt(parts[1].slice(1));
+    return fam.stages[idx].max;
+  } else if(fam.type==='repairgroup'){
+    const idx = parseInt(parts[1]);
+    return fam.variants[idx].max;
+  }
+  return 999999;
+}
+
+function handleAction(ds){
+  const act = ds.act;
+  const k = ds.k;
+
+  if(act==='add'){
+    getList(k).push({id:uid(), count:0, broken:false, cycles:0});
+    saveState(); render(); return;
+  }
+  if(act==='tap'){
+    const list = getList(k);
+    const inst = list.find(i=>i.id===ds.id);
+    if(inst && !inst.broken && !inst.stored){
+      const max = stageMaxForKey(k);
+      inst.count = Math.min(max, inst.count+1);
+    }
+    saveState(); render(); return;
+  }
+  if(act==='dec'){
+    const list = getList(k);
+    const inst = list.find(i=>i.id===ds.id);
+    if(inst && !inst.stored){ inst.count = Math.max(0, inst.count-1); }
+    saveState(); render(); return;
+  }
+  if(act==='del'){
+    requestDelete(k, ds.id);
+    return;
+  }
+  if(act==='loc'){
+    const list = getList(k);
+    const inst = list.find(i=>i.id===ds.id);
+    if(inst){ inst.stored = !inst.stored; }
+    saveState(); render(); return;
+  }
+  if(act==='brk'){
+    const list = getList(k);
+    const inst = list.find(i=>i.id===ds.id);
+    if(inst){ inst.broken = !inst.broken; }
+    saveState(); render(); return;
+  }
+  if(act==='merge'){
+    const fam = findFamById(ds.fam);
+    const idx = parseInt(ds.idx);
+    const st = fam.stages[idx];
+    const list = getList(k);
+    const nonBroken = list.filter(i=> !(fam.repair && i.count>=st.max));
+    if(nonBroken.length>=2){
+      const removeIds = new Set([nonBroken[0].id, nonBroken[1].id]);
+      instances[k] = list.filter(i=>!removeIds.has(i.id));
+      const nextKey = ds.fam+'__s'+(idx+1);
+      getList(nextKey).push({id:uid(), count:0, broken:false, cycles:0});
+    }
+    saveState(); render(); return;
+  }
+  if(act==='repairmerge'){
+    const famId = k.split('__')[0];
+    const fam = findFamById(famId);
+    const idx = parseInt(k.split('__s')[1]);
+    const st = fam.stages[idx];
+    const list = getList(k);
+    const broken = list.filter(i=>i.count>=st.max);
+    if(broken.length>=2){
+      const removeIds = new Set([broken[0].id, broken[1].id]);
+      instances[k] = list.filter(i=>!removeIds.has(i.id));
+      getList(k).push({id:uid(), count:0, broken:false, cycles:0});
+    }
+    saveState(); render(); return;
+  }
+}
+
+document.getElementById('search').addEventListener('input', (e)=>{
+  query = e.target.value; render();
+});
+
+/* 꾹 누르기: 누르고 있으면 계속 증가. 매 tick마다 전체 재렌더링을 하면
+   누르고 있던 버튼이 DOM에서 교체되어 손을 뗐을 때 이벤트가 유실되므로,
+   보유 중에는 해당 칩만 직접 갱신하고 손을 뗀 시점에 한 번만 전체 렌더링한다. */
+function getStageInfo(k){
+  const parts = k.split('__');
+  const fam = findFamById(parts[0]);
+  if(!fam) return null;
+  const stIdx = parseInt(parts[1].slice(1));
+  return {fam, stIdx, st: fam.stages[stIdx]};
+}
+function refreshChipDom(k, id){
+  const info = getStageInfo(k);
+  if(!info) return;
+  const {fam, st, stIdx} = info;
+  const isLast = stIdx === fam.stages.length-1;
+  const isFinalPop = isLast && !fam.repair;
+  const inst = getList(k).find(i=>i.id===id);
+  if(!inst) return;
+  const el = document.querySelector('.chip[data-k="'+CSS.escape(k)+'"][data-id="'+CSS.escape(id)+'"]');
+  if(!el) return;
+  const broken = fam.repair && inst.count>=st.max;
+  el.className = chipClass(inst.count, st.max, broken, isFinalPop) + (inst.stored?' stored':'');
+  const countEl = el.querySelector('.count');
+  if(countEl) countEl.textContent = inst.count;
+  const barEl = el.querySelector('.bar i');
+  if(barEl) barEl.style.width = Math.min(100, inst.count/st.max*100)+'%';
+  const hasTag = !!el.querySelector('.tag');
+  if(broken && !hasTag) el.insertAdjacentHTML('afterbegin','<div class="tag">🔧</div>');
+  if(!broken && hasTag) el.querySelector('.tag').remove();
+}
+function doTap(ds){
+  const inst = getList(ds.k).find(i=>i.id===ds.id);
+  if(inst && !inst.stored){
+    const max = stageMaxForKey(ds.k);
+    inst.count = Math.min(max, inst.count+1);
+    refreshChipDom(ds.k, ds.id);
+    saveState();
+  }
+}
+let holdTimer=null, holdInterval=null;
+function stopHold(){
+  clearTimeout(holdTimer); clearInterval(holdInterval);
+  holdTimer=null; holdInterval=null;
+}
+document.addEventListener('pointerdown', (e)=>{
+  const el = e.target.closest('[data-act]');
+  if(!el || el.dataset.act!=='tap') return;
+  e.preventDefault();
+  const ds = {k:el.dataset.k, id:el.dataset.id};
+  stopHold();
+  doTap(ds);
+  holdTimer = setTimeout(()=>{
+    holdInterval = setInterval(()=>{ doTap(ds); }, 110);
+  }, 420);
+});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>document.addEventListener(ev, ()=>{
+  if(holdTimer||holdInterval){ stopHold(); render(); }
+}));
+window.addEventListener('blur', ()=>{ stopHold(); render(); });
+
+document.getElementById('resetAll').addEventListener('click', async ()=>{
+  if(confirm('모든 기록을 초기화할까요? 되돌릴 수 없어요.')){
+    instances = {};
+    saveState(); render();
+  }
+});
+
+(async function init(){
+  await loadState();
+  render();
+})();
+</script>
+</body>
+</html>
