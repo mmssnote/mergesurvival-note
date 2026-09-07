@@ -246,6 +246,7 @@
   .userchip span{color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
   .userchip button{flex:none;border:none;background:transparent;color:var(--rust);border:1px solid var(--rust);border-radius:6px;padding:2px 7px;font-size:10.5px;cursor:pointer;}
   .syncnote{font-size:10px;color:var(--ink-soft);margin-top:4px;}
+  .credit{font-size:9.5px;color:var(--line);margin:14px 0 0;text-align:center;}
 </style>
 </head>
 <body>
@@ -299,6 +300,7 @@
       </div>
       <p class="syncnote" id="syncnote"></p>
     </div>
+    <p class="credit">(정보제공 : 여성시대 머지 서바이벌 달글)</p>
   </footer>
   </div>
 
@@ -763,11 +765,32 @@ function renderRepairGroup(fam){
 function sortByCustomOrder(list){
   return [...list].sort((a,b)=> customOrder.indexOf(a.id)-customOrder.indexOf(b.id));
 }
+const CHOSUNG_LIST = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function toChosung(str){
+  let out = '';
+  for(const ch of str){
+    const code = ch.charCodeAt(0);
+    if(code>=0xAC00 && code<=0xD7A3){
+      out += CHOSUNG_LIST[Math.floor((code-0xAC00)/588)];
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+function isChosungQuery(str){
+  return str.length>0 && [...str].every(ch=> CHOSUNG_LIST.includes(ch));
+}
+function matchesQuery(name, q){
+  if(!q) return true;
+  if(isChosungQuery(q)) return toChosung(name).includes(q);
+  return name.toLowerCase().includes(q.toLowerCase());
+}
 function getVisibleFamilies(){
   let families = DB.filter(f=>{
     if(curCat!=='전체' && f.cat!==curCat) return false;
     if(curCat==='우표' && curSub && f.sub!==curSub) return false;
-    if(query && !f.name.toLowerCase().includes(query.toLowerCase())) return false;
+    if(query && !matchesQuery(f.name, query.trim())) return false;
     return true;
   });
   const favs = sortByCustomOrder(families.filter(f=>favorites.has(f.id)));
