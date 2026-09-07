@@ -551,7 +551,6 @@ function chipHtml(k, inst, max, isFinalPop, forcedBroken){
       </div>`;
   return `<div class="${cls}" data-k="${k}" data-id="${inst.id}">
     ${broken?'<div class="tag">🔧</div>':''}
-    ${inst.stored?'<div class="loc-tag">🔒 창고</div>':''}
     <div class="count">${inst.count}</div>
     <div class="bar"><i style="width:${pct}%"></i></div>
     ${ctrl}
