@@ -40,7 +40,7 @@
     padding:14px 0 6px;
   }
   .stickybar{
-    position:sticky;top:0;z-index:20;
+    position:sticky;top:46px;z-index:20;
     background:var(--paper);
     padding:8px 0 8px;
     border-bottom:2px dashed var(--line);
@@ -78,6 +78,33 @@
     background:transparent;font-size:11.5px;font-weight:600;color:var(--wood);cursor:pointer;white-space:nowrap;
   }
   .subtab.active{background:var(--amber);border-style:solid;border-color:var(--amber-dark);color:#fff;}
+
+  .toptabs{
+    display:flex;gap:6px;padding:10px 0 8px;overflow-x:auto;background:var(--paper);
+    border-bottom:2px dashed var(--line);position:sticky;top:0;z-index:21;
+  }
+  .toptabs::-webkit-scrollbar{display:none;}
+  .toptab{
+    flex:none;padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);
+    background:var(--paper);font-size:12.5px;font-weight:700;color:var(--ink-soft);
+    cursor:pointer;white-space:nowrap;
+  }
+  .toptab.active{background:var(--wood);border-color:var(--wood);color:#fff;}
+
+  .infopage{padding:16px 14px 40px;}
+  .infohead{font-family:'Jua',sans-serif;font-size:18px;margin:4px 0 16px;color:var(--ink);}
+  .infosection{
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .infotitle{font-weight:700;font-size:14.5px;margin-bottom:8px;}
+  .infotitle.highlight{color:var(--rust);}
+  .infolist{list-style:none;margin:0;padding:0;}
+  .infolist li{font-size:13px;color:var(--ink);padding:5px 0;line-height:1.5;}
+  .infolist li:not(:last-child){border-bottom:1px dashed var(--line);}
+  .infonote{font-size:12.5px;color:var(--ink-soft);margin:4px 0 0;text-decoration:underline;}
+  .pricelist li{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .pricelist li b{color:var(--amber-dark);font-weight:700;flex:none;}
 
   .legend{
     display:flex;gap:10px;flex-wrap:wrap;margin:10px 2px 2px;font-size:10.5px;color:var(--ink-soft);
@@ -203,23 +230,33 @@
     border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;
   }
   .savehint{font-size:10.5px;color:var(--ink-soft);margin-top:8px;}
+  .savewarn{font-size:10.5px;color:var(--wood);margin:6px 0 0;line-height:1.5;padding:8px 10px;
+    background:rgba(139,107,74,0.08);border-radius:8px;}
   .authrow{margin-top:10px;}
   .loginbtn{
-    width:100%;padding:9px 10px;border-radius:10px;border:1.5px solid var(--moss);
-    background:#fff;color:var(--moss-dark);font-weight:700;font-size:12.5px;cursor:pointer;
+    width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid var(--moss);
+    background:transparent;color:var(--moss-dark);font-weight:700;font-size:12px;cursor:pointer;
   }
   .authrow.logged .loginbtn{display:none;}
-  .userchip{display:none;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);
-    border-radius:10px;padding:6px 10px;font-size:12px;}
+  .userchip{display:none;align-items:center;gap:6px;background:rgba(46,42,34,0.04);border:1px solid var(--line);
+    border-radius:9px;padding:4px 8px;font-size:11px;}
   .authrow.logged .userchip{display:flex;}
-  .userchip img{width:22px;height:22px;border-radius:50%;}
+  .userchip img{width:18px;height:18px;border-radius:50%;}
   .userchip span{flex:1;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .userchip button{border:none;background:var(--rust);color:#fff;border-radius:7px;padding:3px 8px;font-size:11px;cursor:pointer;}
+  .userchip button{border:none;background:transparent;color:var(--rust);border:1px solid var(--rust);border-radius:6px;padding:2px 7px;font-size:10.5px;cursor:pointer;}
   .syncnote{font-size:10px;color:var(--ink-soft);margin-top:4px;}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="toptabs" id="toptabs">
+    <button class="toptab active" data-top="main">📋 메인</button>
+    <button class="toptab" data-top="event">🎉 이벤트</button>
+    <button class="toptab" data-top="shop">💎 상점 시세</button>
+    <button class="toptab" data-top="funcitem">🧰 기능 아이템</button>
+  </div>
+
+  <div id="page-main" class="toppage">
   <header class="top">
     <div id="collapsible">
       <div class="brand">
@@ -251,6 +288,7 @@
   <footer>
     <button class="resetbtn" id="resetAll">전체 기록 초기화</button>
     <p class="savehint">기록은 이 브라우저에 자동 저장돼요</p>
+    <p class="savewarn" id="savewarn">⚠️ Google 로그인을 하지 않으면 이 기기(브라우저)에만 저장돼요. 브라우저 데이터·캐시를 지우거나, 앱을 지웠다 다시 설치하거나, 다른 기기·다른 브라우저로 열면 기록이 사라질 수 있어요. 여러 기기에서 보거나 데이터를 안전하게 보관하려면 아래 Google 로그인을 추천해요.</p>
     <div class="authrow" id="authrow">
       <button id="loginBtn" class="loginbtn">🔑 Google로 로그인하고 동기화</button>
       <div class="userchip" id="userchip">
@@ -261,7 +299,82 @@
       <p class="syncnote" id="syncnote"></p>
     </div>
   </footer>
+  </div>
+
+  <div id="page-event" class="toppage infopage" style="display:none;">
+    <div class="infohead">🎉 이벤트 정보</div>
+
+    <div class="infosection">
+      <div class="infotitle">🐶 평일 루틴</div>
+      <ul class="infolist">
+        <li>✔ 월~목: 생존 훈련 🔨</li>
+        <li>✔ 목~금: 퍼즐 게임 🧩 (이지/하드 택1)</li>
+        <li>✔ 금~일: 꿀벌 빙고 🐝</li>
+        <li>✔ 수,토: 시드의 목욕탈출 🫧</li>
+        <li>✔ 일: 황야의 보물 레이스 🏆</li>
+      </ul>
+    </div>
+
+    <div class="infosection">
+      <div class="infotitle highlight">🐶 매월 1일: 창고 50% 할인 ⭐⭐⭐</div>
+      <p class="infonote">골드를 한 달 동안 모았다가 창고에 투자하는 걸 추천</p>
+    </div>
+
+    <div class="infosection">
+      <div class="infotitle">🐶 상시 이벤트: 쓰레기 산 탐험</div>
+      <ul class="infolist">
+        <li>쓰레기를 치우고 숨어있는 여러 보상을 받을 수 있음</li>
+        <li>정화의 구슬로 소원을 빌 수 있음 (특수효과)</li>
+        <li>환경 코인으로 동상을 구매하고(특수효과 시간증가) 소원의 단계(특수효과 강화)를 늘릴 수 있음</li>
+      </ul>
+    </div>
+
+    <div class="infosection">
+      <div class="infotitle">🐶 월 2회 낡은 기찻길 오픈</div>
+      <ul class="infolist">
+        <li>미션을 깨고 여러 보상을 받을 수 있는 이벤트</li>
+        <li>수제간식을 모아 특별손님과 휴식처 획득</li>
+        <li>특실승차권(7500원)은 첫날 결제하는 게 무조건 이득❗ 기간이 얼마 남지 않았다면 다음 승차권을 사는 것을 추천함</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="page-shop" class="toppage infopage" style="display:none;">
+    <div class="infohead">💎 상점 생산 아이템 시세</div>
+    <div class="infosection">
+      <div class="infotitle">🟢 보너스 상점 시세 (보석)</div>
+      <ul class="infolist pricelist">
+        <li><span>🪙 나무봉</span><b>7~22</b></li>
+        <li><span>🪙 식품상자(소)</span><b>5~15</b></li>
+        <li><span>🪙 식품상자(중)</span><b>10~30</b></li>
+        <li><span>🪙 쓸만한 케이블</span><b>15~45</b></li>
+        <li><span>🪙 접힌 수납상자</span><b>10~30</b></li>
+        <li><span>🪙 지퍼고리</span><b>10~30</b></li>
+        <li><span>🪙 덮개용 천</span><b>12~37</b></li>
+        <li><span>🪙 사과씨앗</span><b>10~30</b></li>
+        <li><span>🪙 재활용품 봉지</span><b>10~30</b></li>
+        <li><span>🪙 증류기</span><b>20~60</b></li>
+        <li><span>🪙 소형응급파우치</span><b>10~30</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="page-funcitem" class="toppage infopage" style="display:none;">
+    <div class="infohead">🧰 기능 아이템 머지 최대 횟수</div>
+    <div class="infosection">
+      <ul class="infolist pricelist">
+        <li><span>⏰ 독촉의 시계 (30분)</span><b>24시간</b></li>
+        <li><span>⏰ 재촉의 시계 (10분)</span><b>12시간</b></li>
+        <li><span>✂️ 조이의 요술가위</span><b>99개</b></li>
+        <li><span>🔨 리암의 제작카드</span><b>99개</b></li>
+        <li><span>💳 소피아의 비밀카드</span><b>99개</b></li>
+        <li><span>🔧 이든의 수리카드</span><b>99개</b></li>
+        <li><span>⏳ 모래시계</span><b>99개</b></li>
+      </ul>
+    </div>
+  </div>
 </div>
+
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -308,21 +421,21 @@ const DB = [
     stages:[{label:'소',max:19},{label:'중',max:39},{label:'대',max:80}]},
   {id:'vest', cat:'생산', icon:'🦺', name:'탐험 조끼', type:'chain',
     stages:[{label:'소',max:14},{label:'중',max:29},{label:'대',max:60}]},
-  {id:'furniture', cat:'생산', icon:'🪑', name:'부서진 가구', type:'single', stages:[{label:'',max:15}]},
-  {id:'car', cat:'생산', icon:'🚗', name:'방치된 고철', type:'single', stages:[{label:'',max:15}]},
-  {id:'fishingrod', cat:'생산', icon:'🎣', name:'낚시대', type:'single', stages:[{label:'',max:3}]},
-  {id:'beenet', cat:'생산', icon:'🏸', name:'채집망 (벌)', type:'single', stages:[{label:'',max:7}]},
-  {id:'dandelion', cat:'생산', icon:'🌼', name:'민들레 홀씨', type:'single', stages:[{label:'',max:7,note:'씨앗 3개 · 홀씨 4개'}]},
   {id:'bee', cat:'생산', icon:'🐝', name:'꿀벌', type:'single', stages:[{label:'3단계',max:7}]},
   {id:'hive', cat:'생산', icon:'🍯', name:'벌집', type:'chain',
     stages:[{label:'6단계',max:10},{label:'7단계',max:23}]},
   {id:'eggbasket', cat:'생산', icon:'🥚', name:'달걀 꾸러미', type:'chain',
     stages:[{label:'소',max:2},{label:'중',max:6},{label:'대',max:15}]},
+  {id:'furniture', cat:'생산', icon:'🪑', name:'부서진 가구', type:'single', stages:[{label:'',max:15}]},
+  {id:'car', cat:'생산', icon:'🚗', name:'방치된 고철', type:'single', stages:[{label:'',max:15}]},
+  {id:'woodpile', cat:'생산', icon:'🪵', name:'나무더미', type:'single', stages:[{label:'',max:10}]},
   {id:'wheat', cat:'생산', icon:'🌾', name:'수확한 밀', type:'single', stages:[{label:'',max:30}]},
   {id:'straw', cat:'생산', icon:'👒', name:'밀짚 더미', type:'single', stages:[{label:'',max:15}]},
   {id:'dough', cat:'생산', icon:'🫓', name:'반죽 그릇', type:'single', stages:[{label:'',max:5}]},
-  {id:'woodpile', cat:'생산', icon:'🪵', name:'나무더미', type:'single', stages:[{label:'',max:10}]},
+  {id:'beenet', cat:'생산', icon:'🏸', name:'채집망 (벌)', type:'single', stages:[{label:'',max:7}]},
   {id:'apple', cat:'생산', icon:'🍎', name:'사과 바구니', type:'single', stages:[{label:'',max:5}]},
+  {id:'dandelion', cat:'생산', icon:'🌼', name:'민들레 홀씨', type:'single', stages:[{label:'',max:7,note:'씨앗 3개 · 홀씨 4개'}]},
+  {id:'fishingrod', cat:'생산', icon:'🎣', name:'낚시대', type:'single', stages:[{label:'',max:3}]},
   {id:'corn', cat:'생산', icon:'🌽', name:'옥수수 바구니', type:'single', stages:[{label:'',max:7}]},
   {id:'potato', cat:'생산', icon:'🥔', name:'감자 상자', type:'single', stages:[{label:'',max:17}]},
   {id:'milkbucket', cat:'생산', icon:'🍼', name:'우유 양동이', type:'single', stages:[{label:'',max:11}]},
@@ -399,6 +512,8 @@ function iconMarkup(fam){
 let instances = {}; // key: familyId or familyId__variantIdx -> array of {id,stage,count,broken,cycles}
 let favorites = new Set(); // 즐겨찾기한 family id
 let customOrder = []; // 사용자가 정한 아이템 순서 (family id 배열)
+let orderVersion = 0; // 순서 강제 재정렬 버전
+const ORDER_VERSION = 1; // 이 숫자를 올리면 기존 사용자도 DB 기본 순서로 한 번 재정렬됨
 let reorderMode = false;
 let curCat = '전체';
 let curSub = null;
@@ -437,25 +552,32 @@ function applyLoadedState(json){
       instances = parsed.instances || {};
       favorites = new Set(parsed.favorites || []);
       customOrder = parsed.order || [];
+      orderVersion = parsed.orderVersion || 0;
     } else {
       instances = parsed || {}; // 예전 저장 형식 호환
     }
   }catch(e){ instances = {}; }
   const dbIds = DB.map(f=>f.id);
-  customOrder = customOrder.filter(id=>dbIds.includes(id));
-  // 새로 추가된 아이템은 맨 뒤가 아니라, DB상 원래 순서에서 바로 앞에 있던(이미 목록에 있는) 아이템 뒤에 끼워넣기
-  dbIds.forEach((id, dbIdx)=>{
-    if(customOrder.includes(id)) return;
-    let insertAfter = -1;
-    for(let i=dbIdx-1; i>=0; i--){
-      const idx = customOrder.indexOf(dbIds[i]);
-      if(idx!==-1){ insertAfter = idx; break; }
-    }
-    customOrder.splice(insertAfter+1, 0, id);
-  });
+  if(orderVersion < ORDER_VERSION){
+    // 아이템 순서를 앱의 최신 기본 순서로 한 번 강제 재정렬 (즐겨찾기·기록은 그대로 유지)
+    customOrder = dbIds.slice();
+    orderVersion = ORDER_VERSION;
+  } else {
+    customOrder = customOrder.filter(id=>dbIds.includes(id));
+    // 새로 추가된 아이템은 맨 뒤가 아니라, DB상 원래 순서에서 바로 앞에 있던(이미 목록에 있는) 아이템 뒤에 끼워넣기
+    dbIds.forEach((id, dbIdx)=>{
+      if(customOrder.includes(id)) return;
+      let insertAfter = -1;
+      for(let i=dbIdx-1; i>=0; i--){
+        const idx = customOrder.indexOf(dbIds[i]);
+        if(idx!==-1){ insertAfter = idx; break; }
+      }
+      customOrder.splice(insertAfter+1, 0, id);
+    });
+  }
 }
 function currentStateJson(){
-  return JSON.stringify({instances, favorites:[...favorites], order:customOrder});
+  return JSON.stringify({instances, favorites:[...favorites], order:customOrder, orderVersion});
 }
 
 async function loadState(){
@@ -976,14 +1098,17 @@ document.getElementById('resetAll').addEventListener('click', ()=>{
 function updateAuthUI(){
   const authrow = document.getElementById('authrow');
   const syncnote = document.getElementById('syncnote');
+  const savewarn = document.getElementById('savewarn');
   if(currentUser){
     authrow.classList.add('logged');
     document.getElementById('username').textContent = currentUser.displayName || currentUser.email || '로그인됨';
     document.getElementById('userphoto').src = currentUser.photoURL || '';
     syncnote.textContent = '☁️ Google 계정에 자동 동기화 중이에요';
+    if(savewarn) savewarn.style.display = 'none';
   } else {
     authrow.classList.remove('logged');
     syncnote.textContent = '로그인하면 여러 기기에서 같은 기록을 볼 수 있어요';
+    if(savewarn) savewarn.style.display = '';
   }
 }
 document.getElementById('loginBtn').addEventListener('click', async ()=>{
@@ -1015,7 +1140,19 @@ onAuthStateChanged(auth, async (user)=>{
   }
 });
 
+function wireTopTabs(){
+  document.querySelectorAll('.toptab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const target = btn.dataset.top;
+      document.querySelectorAll('.toptab').forEach(b=> b.classList.toggle('active', b===btn));
+      document.querySelectorAll('.toppage').forEach(p=> p.style.display='none');
+      document.getElementById('page-'+target).style.display='';
+    });
+  });
+}
+
 (async function init(){
+  wireTopTabs();
   await loadState();
   render();
 })();
