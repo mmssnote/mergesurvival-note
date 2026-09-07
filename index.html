@@ -239,11 +239,11 @@
   }
   .authrow.logged .loginbtn{display:none;}
   .userchip{display:none;align-items:center;gap:6px;background:rgba(46,42,34,0.04);border:1px solid var(--line);
-    border-radius:9px;padding:4px 8px;font-size:11px;}
-  .authrow.logged .userchip{display:flex;}
-  .userchip img{width:18px;height:18px;border-radius:50%;}
-  .userchip span{flex:1;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .userchip button{border:none;background:transparent;color:var(--rust);border:1px solid var(--rust);border-radius:6px;padding:2px 7px;font-size:10.5px;cursor:pointer;}
+    border-radius:9px;padding:4px 8px;font-size:11px;max-width:100%;}
+  .authrow.logged .userchip{display:inline-flex;}
+  .userchip img{width:18px;height:18px;border-radius:50%;flex:none;}
+  .userchip span{color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
+  .userchip button{flex:none;border:none;background:transparent;color:var(--rust);border:1px solid var(--rust);border-radius:6px;padding:2px 7px;font-size:10.5px;cursor:pointer;}
   .syncnote{font-size:10px;color:var(--ink-soft);margin-top:4px;}
 </style>
 </head>
