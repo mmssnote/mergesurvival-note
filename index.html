@@ -39,12 +39,6 @@
     background:var(--paper);
     padding:14px 0 6px;
   }
-  .stickybar{
-    position:sticky;top:46px;z-index:20;
-    background:var(--paper);
-    padding:8px 0 8px;
-    border-bottom:2px dashed var(--line);
-  }
   .brand{display:flex;align-items:center;gap:10px;padding:0 2px;}
   .brand .badge{
     width:40px;height:40px;border-radius:50%;
@@ -62,34 +56,41 @@
   }
   .searchbar input:focus{outline:2px solid var(--moss);outline-offset:1px;}
 
-  .tabs{display:flex;gap:6px;margin-top:2px;overflow-x:auto;padding-bottom:2px;}
-  .tabs::-webkit-scrollbar{display:none;}
+  /* ---- 상단 통합 메뉴(탑탭+카테고리탭), 스크롤 시 자동 접힘 ---- */
+  .topbar-wrap{
+    position:sticky;top:0;z-index:21;background:var(--paper);
+    transition:transform .22s ease;
+  }
+  .topbar-wrap.hide{transform:translateY(-100%);}
+  .topbar{
+    display:flex;align-items:center;gap:6px;padding:9px 0;overflow-x:auto;
+    border-bottom:2px dashed var(--line);
+  }
+  .topbar::-webkit-scrollbar{display:none;}
+  .tabsep{flex:none;width:1px;align-self:stretch;margin:2px 1px;background:var(--line);}
+  .toptab{
+    flex:none;padding:6px 11px;border-radius:999px;border:1.5px solid var(--line);
+    background:var(--paper);font-size:12px;font-weight:700;color:var(--ink-soft);
+    cursor:pointer;white-space:nowrap;
+  }
+  .toptab.active{background:var(--wood);border-color:var(--wood);color:#fff;}
+
+  .tabs{display:flex;gap:6px;flex:none;}
   .tab{
     flex:none;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);
-    background:var(--card);font-size:12.5px;font-weight:600;color:var(--ink-soft);
+    background:var(--card);font-size:12px;font-weight:600;color:var(--ink-soft);
     cursor:pointer;white-space:nowrap;
   }
   .tab.active{background:var(--moss);border-color:var(--moss-dark);color:#fff;}
 
-  .subtabs{display:flex;gap:6px;margin-top:8px;overflow-x:auto;}
+  .subtabs{display:flex;gap:6px;overflow-x:auto;padding:8px 0;border-bottom:2px dashed var(--line);}
   .subtabs::-webkit-scrollbar{display:none;}
   .subtab{
     flex:none;padding:4px 10px;border-radius:999px;border:1.5px dashed var(--wood);
     background:transparent;font-size:11.5px;font-weight:600;color:var(--wood);cursor:pointer;white-space:nowrap;
   }
   .subtab.active{background:var(--amber);border-style:solid;border-color:var(--amber-dark);color:#fff;}
-
-  .toptabs{
-    display:flex;gap:6px;padding:10px 0 8px;overflow-x:auto;background:var(--paper);
-    border-bottom:2px dashed var(--line);position:sticky;top:0;z-index:21;
-  }
-  .toptabs::-webkit-scrollbar{display:none;}
-  .toptab{
-    flex:none;padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);
-    background:var(--paper);font-size:12.5px;font-weight:700;color:var(--ink-soft);
-    cursor:pointer;white-space:nowrap;
-  }
-  .toptab.active{background:var(--wood);border-color:var(--wood);color:#fff;}
+  .topbar-wrap.not-main .subtabs{display:none !important;}
 
   .infopage{padding:16px 14px 40px;}
   .infohead{font-family:'Jua',sans-serif;font-size:18px;margin:4px 0 16px;color:var(--ink);}
@@ -187,7 +188,7 @@
     flex:1;border:none;background:#F1EBDA;color:var(--ink-soft);font-size:11px;border-radius:5px;
     padding:3px 2px;cursor:pointer;line-height:1.3;
   }
-  .chip .ctrl button.confirm{background:var(--rust);color:#fff;font-weight:700;}
+  .chip .ctrl button.confirm{background:var(--rust);color:#fff;font-weight:900;font-size:15px;}
   .chip.ready{border-color:var(--amber-dark);background:#FFF6E4;}
   .chip.ready .count{color:var(--amber-dark);}
   .chip.ready .bar i{background:var(--amber);}
@@ -249,11 +250,15 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="toptabs" id="toptabs">
-    <button class="toptab active" data-top="main">📋 메인</button>
-    <button class="toptab" data-top="event">🎉 이벤트</button>
-    <button class="toptab" data-top="shop">💎 상점 시세</button>
-    <button class="toptab" data-top="funcitem">🧰 기능 아이템</button>
+  <div class="topbar-wrap" id="topbarWrap">
+    <div class="topbar" id="topbar">
+      <button class="toptab active" data-top="board">🗺️ 메인보드</button>
+      <button class="toptab" data-top="stamp">📮 우표 스토리</button>
+      <button class="toptab" data-top="event">🎉 이벤트</button>
+      <button class="toptab" data-top="shop">💎 상점 시세</button>
+      <button class="toptab" data-top="funcitem">🧰 기능 아이템</button>
+    </div>
+    <div class="subtabs" id="subtabs" style="display:none;"></div>
   </div>
 
   <div id="page-main" class="toppage">
@@ -278,10 +283,6 @@
       <p class="tip">💡 ＋ 버튼을 꾹 누르면 연속으로 올라가요 · 📦 버튼으로 창고/보드 구분 · ★로 즐겨찾기 · ⠿ 아이콘을 길게 눌러서 순서 변경</p>
     </div>
   </header>
-  <div class="stickybar">
-    <div class="tabs" id="cattabs"></div>
-    <div class="subtabs" id="subtabs" style="display:none;"></div>
-  </div>
 
   <main id="content"></main>
 
@@ -374,6 +375,7 @@
     </div>
   </div>
 </div>
+
 
 
 <script type="module">
@@ -515,7 +517,7 @@ let customOrder = []; // 사용자가 정한 아이템 순서 (family id 배열)
 let orderVersion = 0; // 순서 강제 재정렬 버전
 const ORDER_VERSION = 1; // 이 숫자를 올리면 기존 사용자도 DB 기본 순서로 한 번 재정렬됨
 let reorderMode = false;
-let curCat = '전체';
+let curCat = '생산';
 let curSub = null;
 let query = '';
 const openCards = new Set();
@@ -605,16 +607,6 @@ function getList(k){
 
 /* ---------------- 렌더링 ---------------- */
 function renderTabs(){
-  const cattabs = document.getElementById('cattabs');
-  const cats = ['전체','생산','우표'];
-  cattabs.innerHTML = cats.map(c=>{
-    const label = c==='전체'?'전체':(c==='생산'?'생산 아이템':'우표 스토리');
-    return `<button class="tab ${curCat===c?'active':''}" data-cat="${c}">${label}</button>`;
-  }).join('');
-  cattabs.querySelectorAll('.tab').forEach(b=>{
-    b.onclick=()=>{ curCat=b.dataset.cat; curSub=null; render(); };
-  });
-
   const subtabs = document.getElementById('subtabs');
   if(curCat==='우표'){
     subtabs.style.display='flex';
@@ -664,13 +656,13 @@ function chipHtml(k, inst, max, isFinalPop, forcedBroken){
   const ctrl = inst.stored
     ? `<div class="ctrl">
         <button data-act="loc" data-k="${k}" data-id="${inst.id}" title="보드로 꺼내기">📤</button>
-        <button class="${armed?'confirm':''}" data-act="del" data-k="${k}" data-id="${inst.id}">${armed?'삭제?':'×'}</button>
+        <button class="${armed?'confirm':''}" data-act="del" data-k="${k}" data-id="${inst.id}">×</button>
       </div>`
     : `<button class="plusbtn" data-act="tap" data-k="${k}" data-id="${inst.id}">＋</button>
       <div class="ctrl">
         <button data-act="dec" data-k="${k}" data-id="${inst.id}">−</button>
         <button data-act="loc" data-k="${k}" data-id="${inst.id}" title="창고에 보관">📦</button>
-        <button class="${armed?'confirm':''}" data-act="del" data-k="${k}" data-id="${inst.id}">${armed?'삭제?':'×'}</button>
+        <button class="${armed?'confirm':''}" data-act="del" data-k="${k}" data-id="${inst.id}">×</button>
       </div>`;
   return `<div class="${cls}" data-k="${k}" data-id="${inst.id}">
     ${broken?'<div class="tag">🔧</div>':''}
@@ -896,7 +888,7 @@ function render(){
   }
   let lastSection = null;
   rest.forEach((fam,i)=>{
-    const sectionLabel = fam.cat==='생산' ? '생산 아이템' : ('우표 스토리 · ' + (fam.sub||''));
+    const sectionLabel = fam.cat==='생산' ? '🗺️ 메인보드' : ('📮 우표 스토리 · ' + (fam.sub||''));
     if(sectionLabel!==lastSection && curCat==='전체'){
       html += `<div class="section-label">${sectionLabel}</div>`;
       lastSection = sectionLabel;
@@ -1146,13 +1138,47 @@ function wireTopTabs(){
       const target = btn.dataset.top;
       document.querySelectorAll('.toptab').forEach(b=> b.classList.toggle('active', b===btn));
       document.querySelectorAll('.toppage').forEach(p=> p.style.display='none');
-      document.getElementById('page-'+target).style.display='';
+      if(target==='board' || target==='stamp'){
+        curCat = (target==='board') ? '생산' : '우표';
+        curSub = null;
+        document.getElementById('page-main').style.display='';
+        document.getElementById('topbarWrap').classList.remove('not-main');
+        renderTabs();
+        render();
+      } else {
+        document.getElementById('page-'+target).style.display='';
+        document.getElementById('topbarWrap').classList.add('not-main');
+      }
     });
   });
 }
 
+/* ---- 스크롤 내리면 상단 메뉴 자동으로 접히고, 올리면 다시 나타남 ---- */
+function wireScrollHide(){
+  const wrap = document.getElementById('topbarWrap');
+  if(!wrap) return;
+  let lastY = window.scrollY;
+  let ticking = false;
+  function update(){
+    const y = window.scrollY;
+    if(y <= 8){
+      wrap.classList.remove('hide');
+    } else if(y > lastY + 4){
+      wrap.classList.add('hide');
+    } else if(y < lastY - 4){
+      wrap.classList.remove('hide');
+    }
+    lastY = y;
+    ticking = false;
+  }
+  window.addEventListener('scroll', ()=>{
+    if(!ticking){ requestAnimationFrame(update); ticking = true; }
+  }, {passive:true});
+}
+
 (async function init(){
   wireTopTabs();
+  wireScrollHide();
   await loadState();
   render();
 })();
