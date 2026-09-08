@@ -113,6 +113,7 @@
   .legend span{display:inline-flex;align-items:center;gap:4px;}
   .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
   .tip{font-size:10.5px;color:var(--ink-soft);margin:6px 2px 0;}
+  .tip.warn{color:var(--rust-dark);}
 
   .section-label{
     display:flex;align-items:center;gap:8px;margin:20px 2px 10px;
@@ -246,7 +247,7 @@
   .userchip span{color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
   .userchip button{flex:none;border:none;background:transparent;color:var(--rust);border:1px solid var(--rust);border-radius:6px;padding:2px 7px;font-size:10.5px;cursor:pointer;}
   .syncnote{font-size:10px;color:var(--ink-soft);margin-top:4px;}
-  .credit{font-size:9.5px;color:var(--line);margin:14px 0 0;text-align:center;}
+  .credit{font-size:11px;color:var(--ink-soft);margin:14px 0 0;text-align:center;}
 </style>
 </head>
 <body>
@@ -282,6 +283,7 @@
         <span><i class="dot" style="background:var(--broken)"></i>고장</span>
       </div>
       <p class="tip">💡 ＋ 버튼을 꾹 누르면 연속으로 올라가요 · 📦 버튼으로 창고/보드 구분 · ★로 즐겨찾기 · ⠿ 아이콘을 길게 눌러서 순서 변경</p>
+      <p class="tip warn">⚠️ 다음 단계가 있는 아이템은 표시된 최대횟수보다 +1회일 때 펑 돼요 (예: 식품상자 1단계 11회 펑)</p>
     </div>
   </header>
 
@@ -410,16 +412,16 @@ const DB = [
     stages:[{label:'소',max:9},{label:'중',max:19},{label:'대',max:40}]},
   {id:'distiller', cat:'생산', icon:'🥛', name:'증류기', type:'chain', repair:true,
     stages:[
-      {label:'4단계', max:15, note:'15회때 이슬 4개 받고 합치기'},
-      {label:'5단계', max:15, note:'15회때 스포이드 4개 받고 합치기'},
-      {label:'6단계', max:15, note:'15회때 물컵 4개 받고 합치기'},
-      {label:'7단계', max:15, note:'바가지 5개 x 15회 = 고장 · 최종 단계(수리만 가능)'},
+      {label:'4단계', max:15, mat:{name:'이슬',count:5}, note:'⏱️4m · 15회때 4개 받고 합치기'},
+      {label:'5단계', max:15, mat:{name:'스포이드',count:5}, note:'⏱️5m 💎60 · 15회때 4개 받고 합치기'},
+      {label:'6단계', max:15, mat:{name:'물컵',count:5}, note:'⏱️6m 💎120 · 15회때 4개 받고 합치기'},
+      {label:'7단계', max:15, mat:{name:'바가지',count:5}, note:'⏱️7m 💎240 · 최종단계로 수리만 가능'},
     ]},
   {id:'generator', cat:'생산', icon:'🔋', name:'발전기', type:'chain', repair:true,
     stages:[
-      {label:'4단계', max:15, note:'15회 때 2개 받고 합치기'},
-      {label:'5단계', max:15, note:'15회 때 6개 받고 합치기'},
-      {label:'6단계', max:15, note:'15개 x 15회 = 고장 · 최종 단계(수리만 가능)'},
+      {label:'4단계', max:15, note:'⏱️30m 💎30 · 15회 때 2개 받고 합치기'},
+      {label:'5단계', max:15, note:'⏱️1h 💎70 · 15회 때 6개 받고 합치기'},
+      {label:'6단계', max:15, note:'⏱️2h 💎150 · 최종단계로 수리만 가능'},
     ]},
   {id:'pencilcase', cat:'생산', icon:'✏️', name:'나무필통', type:'chain',
     stages:[{label:'소',max:19},{label:'중',max:39},{label:'대',max:80}]},
@@ -681,7 +683,7 @@ function renderStageChips(k, list, max, isFinalPop, isBroken){
   board.forEach(inst=> html += chipHtml(k, inst, max, isFinalPop, isBroken && isBroken(inst)));
   html += `<div class="addchip" data-act="add" data-k="${k}">＋</div></div>`;
   if(stored.length){
-    html += `<div class="stored-label">📦 창고 보관 중</div><div class="chips">`;
+    html += `<div class="stored-label">📦 창고</div><div class="chips">`;
     stored.forEach(inst=> html += chipHtml(k, inst, max, isFinalPop, isBroken && isBroken(inst)));
     html += `</div>`;
   }
@@ -696,8 +698,9 @@ function renderChain(fam){
     const isLast = idx===fam.stages.length-1;
     const isFinalPop = isLast && !fam.repair;
     const suffix = fam.repair ? ' · 고장' : (isLast?' · 펑':' · 여기까지 누르고 합치기');
+    const matText = st.mat ? `${st.mat.name} ${st.mat.count}개 · ` : '';
     html += `<div class="stage-block">
-      <div class="stage-title"><span>${st.label?st.label+' ':''}</span><span class="max">최대 ${st.max}회${suffix}</span></div>
+      <div class="stage-title"><span>${st.label?st.label+' ':''}</span><span class="max">${matText}최대 ${st.max}회${suffix}</span></div>
       ${st.note?`<div class="stage-note">${st.note}</div>`:''}`;
     html += renderStageChips(k, list, st.max, isFinalPop, fam.repair?(i=>i.count>=st.max):null);
     const nonBrokenCount = list.filter(i=> !(fam.repair && i.count>=st.max)).length;
