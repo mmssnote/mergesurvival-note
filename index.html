@@ -427,7 +427,7 @@ const DB = [
     stages:[{label:'소',max:19},{label:'중',max:39},{label:'대',max:80}]},
   {id:'vest', cat:'생산', icon:'🦺', name:'탐험 조끼', type:'chain',
     stages:[{label:'소',max:14},{label:'중',max:29},{label:'대',max:60}]},
-  {id:'bee', cat:'생산', icon:'🐝', name:'꿀벌', type:'single', stages:[{label:'3단계',max:7}]},
+  {id:'bee', cat:'생산', icon:'🐝', name:'꿀벌', type:'single', stages:[{label:'3단계',max:7,mergesInto:'벌집 4단계'}]},
   {id:'hive', cat:'생산', icon:'🍯', name:'벌집', type:'chain',
     stages:[{label:'6단계',max:10},{label:'7단계',max:23}]},
   {id:'eggbasket', cat:'생산', icon:'🥚', name:'달걀 꾸러미', type:'chain',
@@ -509,6 +509,10 @@ const ICONS = {
   videotape:'<rect x="3" y="6" width="18" height="12" rx="1" fill="#CBB99A"/><circle cx="8" cy="12" r="2.4" fill="#8B6B4A"/><circle cx="16" cy="12" r="2.4" fill="#8B6B4A"/>',
 };
 function iconMarkup(fam){
+  // SVG 아이콘 우선, 없으면 기존 SVG 객체, 그다음 이모지
+  if(SVG_ICONS && SVG_ICONS[fam.id]){
+    return `<img src="${SVG_ICONS[fam.id]}" style="width:100%;height:100%;object-fit:contain;" alt="${fam.name}">`;
+  }
   const inner = ICONS[fam.id];
   if(inner) return `<svg viewBox="0 0 24 24">${inner}</svg>`;
   return fam.icon;
@@ -704,13 +708,17 @@ function renderChain(fam){
       ${st.note?`<div class="stage-note">${st.note}</div>`:''}`;
     html += renderStageChips(k, list, st.max, isFinalPop, fam.repair?(i=>i.count>=st.max):null);
     const nonBrokenCount = list.filter(i=> !(fam.repair && i.count>=st.max)).length;
+    const boardCount = list.filter(i=> !i.stored && !(fam.repair && i.count>=st.max)).length;
     const brokenCount = fam.repair ? list.filter(i=>i.count>=st.max).length : 0;
     const actions=[];
-    if(!isLast && nonBrokenCount>=2){
+    if(!isLast && boardCount>=2){
       actions.push(`<button class="btn-sm btn-merge" data-act="merge" data-k="${k}" data-fam="${fam.id}" data-idx="${idx}">🔗 2개 합쳐서 다음 단계로</button>`);
     }
     if(fam.repair && brokenCount>=2){
-      actions.push(`<button class="btn-sm btn-repair" data-act="repairmerge" data-k="${k}">🔧 고장 2개 합쳐서 수리</button>`);
+      const brokenBoard = list.filter(i=>!i.stored && i.count>=st.max).length;
+      if(brokenBoard>=2){
+        actions.push(`<button class="btn-sm btn-repair" data-act="repairmerge" data-k="${k}">🔧 고장 2개 합쳐서 수리</button>`);
+      }
     }
     if(actions.length){ html += `<div class="actionrow">${actions.join('')}</div>`; }
     html += `</div>`;
@@ -722,10 +730,12 @@ function renderSingle(fam){
   const st = fam.stages[0];
   const k = keyFor(fam, undefined)+'__s0';
   const list = getList(k);
+  const isFinalPop = !st.mergesInto;
+  const suffix = st.mergesInto ? ` · 여기까지 누르고 합치면 ${st.mergesInto}` : ' · 펑';
   let html = `<div class="stage-block">
-    <div class="stage-title"><span class="max">최대 ${st.max}회 · 펑</span></div>
+    <div class="stage-title"><span class="max">최대 ${st.max}회${suffix}</span></div>
     ${st.note?`<div class="stage-note">${st.note}</div>`:''}`;
-  html += renderStageChips(k, list, st.max, true, null);
+  html += renderStageChips(k, list, st.max, isFinalPop, null);
   html += `</div>`;
   return html;
 }
@@ -1008,8 +1018,10 @@ function handleAction(ds){
     const st = fam.stages[idx];
     const list = getList(k);
     const nonBroken = list.filter(i=> !(fam.repair && i.count>=st.max));
-    if(nonBroken.length>=2){
-      const removeIds = new Set([nonBroken[0].id, nonBroken[1].id]);
+    // 보드(창고가 아닌 것)에 있는 것만 우선
+    const boardItems = nonBroken.filter(i => !i.stored);
+    if(boardItems.length>=2){
+      const removeIds = new Set([boardItems[0].id, boardItems[1].id]);
       instances[k] = list.filter(i=>!removeIds.has(i.id));
       const nextKey = ds.fam+'__s'+(idx+1);
       getList(nextKey).push({id:uid(), count:0, broken:false, cycles:0});
@@ -1022,7 +1034,7 @@ function handleAction(ds){
     const idx = parseInt(k.split('__s')[1]);
     const st = fam.stages[idx];
     const list = getList(k);
-    const broken = list.filter(i=>i.count>=st.max);
+    const broken = list.filter(i=>i.count>=st.max && !i.stored);
     if(broken.length>=2){
       const removeIds = new Set([broken[0].id, broken[1].id]);
       instances[k] = list.filter(i=>!removeIds.has(i.id));
@@ -1051,7 +1063,7 @@ function refreshChipDom(k, id){
   if(!info) return;
   const {fam, st, stIdx} = info;
   const isLast = stIdx === fam.stages.length-1;
-  const isFinalPop = isLast && !fam.repair;
+  const isFinalPop = isLast && !fam.repair && !st.mergesInto;
   const inst = getList(k).find(i=>i.id===id);
   if(!inst) return;
   const el = document.querySelector('.chip[data-k="'+CSS.escape(k)+'"][data-id="'+CSS.escape(id)+'"]');
