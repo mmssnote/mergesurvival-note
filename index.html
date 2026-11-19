@@ -613,6 +613,16 @@ async function loadState(){
 }
 let saveTimer=null;
 let syncPaused=false;
+let dirty=false;
+function getSavedAt(){ try{ return parseInt(localStorage.getItem('ms_saved_at'))||0; }catch(e){ return 0; } }
+function setSavedAt(t){ try{ localStorage.setItem('ms_saved_at', String(t)); }catch(e){} }
+function fmtTime(t){
+  if(!t) return '저장 시각 정보 없음';
+  const d=new Date(t); const h=d.getHours();
+  const ap=h<12?'오전':'오후'; const h12=h%12===0?12:h%12;
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${ap} ${h12}:${pad(d.getMinutes())}`;
+}
 function writeLocalNow(){
   const json = currentStateJson();
   try{ localStorage.setItem(LOCAL_KEY, json); }catch(e){}
@@ -620,11 +630,15 @@ function writeLocalNow(){
   return json;
 }
 async function pushCloud(){
-  if(!currentUser || syncPaused) return;
-  try{ await setDoc(doc(db,'users',currentUser.uid), {data: currentStateJson(), updatedAt: Date.now()}, {merge:true}); }
-  catch(e){ console.error('클라우드 저장 실패', e); }
+  if(!currentUser || syncPaused || !dirty) return;
+  try{
+    await setDoc(doc(db,'users',currentUser.uid), {data: currentStateJson(), updatedAt: getSavedAt()||Date.now()}, {merge:true});
+    dirty=false;
+  }catch(e){ console.error('클라우드 저장 실패', e); }
 }
 function saveState(){
+  setSavedAt(Date.now());
+  dirty=true;
   writeLocalNow(); // 이 기기에는 바로 저장
   clearTimeout(saveTimer);
   saveTimer = setTimeout(pushCloud, 400);
@@ -1191,11 +1205,11 @@ function normalizeState(json){
   try{ const p=JSON.parse(json); return JSON.stringify({i:p.instances||{}, f:p.favorites||[], o:p.order||[]}); }
   catch(e){ return ''; }
 }
-function askChoice(localS, cloudS){
+function askChoice(localS, cloudS, localT, cloudT){
   return new Promise(resolve=>{
     const ov=document.getElementById('choiceOverlay');
-    document.getElementById('choiceLocalInfo').textContent = `아이템 ${localS.n}개 · 즐겨찾기 ${localS.fav}개`;
-    document.getElementById('choiceCloudInfo').textContent = `아이템 ${cloudS.n}개 · 즐겨찾기 ${cloudS.fav}개`;
+    document.getElementById('choiceLocalInfo').textContent = `아이템 ${localS.n}개 · 즐겨찾기 ${localS.fav}개 · 마지막 저장 ${fmtTime(localT)}`;
+    document.getElementById('choiceCloudInfo').textContent = `아이템 ${cloudS.n}개 · 즐겨찾기 ${cloudS.fav}개 · 마지막 저장 ${fmtTime(cloudT)}`;
     ov.style.display='flex';
     const done=(v)=>{ ov.style.display='none'; resolve(v); };
     document.getElementById('choiceLocal').onclick=()=>done('local');
@@ -1221,12 +1235,14 @@ onAuthStateChanged(auth, async (user)=>{
       applyLoadedState(cloudJson);
       await localSet(currentStateJson());
     } else {
-      const choice = await askChoice(localS, dataSummary(cloudJson));
+      const cloudT = (snap.data() && snap.data().updatedAt) || 0;
+      const choice = await askChoice(localS, dataSummary(cloudJson), getSavedAt(), cloudT);
       if(choice==='cloud'){
         applyLoadedState(cloudJson);
+        setSavedAt(cloudT);
         await localSet(currentStateJson());
       } else {
-        await setDoc(doc(db,'users',user.uid), {data: localJson, updatedAt: Date.now()});
+        await setDoc(doc(db,'users',user.uid), {data: localJson, updatedAt: getSavedAt()||Date.now()});
       }
     }
     setOwner(user.uid);
