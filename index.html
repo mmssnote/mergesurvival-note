@@ -247,6 +247,13 @@
   .userchip span{color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
   .userchip button{flex:none;border:none;background:transparent;color:var(--rust);border:1px solid var(--rust);border-radius:6px;padding:2px 7px;font-size:10.5px;cursor:pointer;}
   .syncnote{font-size:10px;color:var(--ink-soft);margin-top:4px;}
+  .choice-overlay{position:fixed;inset:0;background:rgba(46,42,34,0.55);z-index:100;align-items:center;justify-content:center;padding:20px;}
+  .choice-box{background:var(--card);border-radius:16px;padding:20px 18px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,0.3);}
+  .choice-title{font-family:'Jua',sans-serif;font-size:17px;margin-bottom:8px;}
+  .choice-desc{font-size:12px;color:var(--ink-soft);line-height:1.5;margin:0 0 14px;}
+  .choice-btn{display:block;width:100%;text-align:left;border:1.5px solid var(--moss);background:#fff;border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;font-family:inherit;color:var(--ink);}
+  .choice-btn b{display:block;font-size:13.5px;}
+  .choice-btn span{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
   .credit{font-size:11px;color:var(--ink-soft);margin:14px 0 0;text-align:center;}
 </style>
 </head>
@@ -382,6 +389,15 @@
 
 
 
+<div class="choice-overlay" id="choiceOverlay" style="display:none;">
+  <div class="choice-box">
+    <div class="choice-title">어떤 기록을 사용할까요?</div>
+    <p class="choice-desc">이 기기에 저장된 기록과 로그인한 계정의 기록이 서로 달라요. 선택하지 않은 쪽은 덮어써져요.</p>
+    <button class="choice-btn" id="choiceLocal"><b>📱 이 기기 기록 사용</b><span id="choiceLocalInfo"></span></button>
+    <button class="choice-btn" id="choiceCloud"><b>☁️ 계정 기록 사용</b><span id="choiceCloudInfo"></span></button>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -412,7 +428,7 @@ const DB = [
     stages:[{label:'소',max:9},{label:'중',max:19},{label:'대',max:40}]},
   {id:'distiller', cat:'생산', icon:'🥛', name:'증류기', type:'chain', repair:true,
     stages:[
-      {label:'4단계', max:15, mat:{name:'이슬',count:5}, note:'⏱️4m · 15회때 4개 받고 합치기'},
+      {label:'4단계', max:15, mat:{name:'이슬',count:5}, note:'⏱️4m 💎30 · 15회때 4개 받고 합치기'},
       {label:'5단계', max:15, mat:{name:'스포이드',count:5}, note:'⏱️5m 💎60 · 15회때 4개 받고 합치기'},
       {label:'6단계', max:15, mat:{name:'물컵',count:5}, note:'⏱️6m 💎120 · 15회때 4개 받고 합치기'},
       {label:'7단계', max:15, mat:{name:'바가지',count:5}, note:'⏱️7m 💎240 · 최종단계로 수리만 가능'},
@@ -596,17 +612,30 @@ async function loadState(){
   else applyLoadedState('{}');
 }
 let saveTimer=null;
-function saveState(){
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async ()=>{
-    const json = currentStateJson();
-    try{ await localSet(json); }catch(e){ console.error('로컬 저장 실패', e); }
-    if(currentUser){
-      try{ await setDoc(doc(db,'users',currentUser.uid), {data: json, updatedAt: Date.now()}, {merge:true}); }
-      catch(e){ console.error('클라우드 저장 실패', e); }
-    }
-  }, 250);
+let syncPaused=false;
+function writeLocalNow(){
+  const json = currentStateJson();
+  try{ localStorage.setItem(LOCAL_KEY, json); }catch(e){}
+  try{ if(window.storage) window.storage.set(LOCAL_KEY, json, false); }catch(e){}
+  return json;
 }
+async function pushCloud(){
+  if(!currentUser || syncPaused) return;
+  try{ await setDoc(doc(db,'users',currentUser.uid), {data: currentStateJson(), updatedAt: Date.now()}, {merge:true}); }
+  catch(e){ console.error('클라우드 저장 실패', e); }
+}
+function saveState(){
+  writeLocalNow(); // 이 기기에는 바로 저장
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushCloud, 400);
+}
+function flushSave(){
+  writeLocalNow();
+  clearTimeout(saveTimer);
+  pushCloud();
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushSave(); });
+window.addEventListener('pagehide', flushSave);
 
 function getList(k){
   if(!instances[k]) instances[k]=[];
@@ -1150,23 +1179,63 @@ document.getElementById('loginBtn').addEventListener('click', async ()=>{
 document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   try{ await signOut(auth); }catch(e){}
 });
+function dataSummary(json){
+  try{
+    const p=JSON.parse(json); let n=0;
+    Object.values(p.instances||{}).forEach(arr=>{ if(Array.isArray(arr)) n+=arr.length; });
+    return {n, fav:(p.favorites||[]).length};
+  }catch(e){ return {n:0,fav:0}; }
+}
+function hasData(sm){ return sm.n>0 || sm.fav>0; }
+function normalizeState(json){
+  try{ const p=JSON.parse(json); return JSON.stringify({i:p.instances||{}, f:p.favorites||[], o:p.order||[]}); }
+  catch(e){ return ''; }
+}
+function askChoice(localS, cloudS){
+  return new Promise(resolve=>{
+    const ov=document.getElementById('choiceOverlay');
+    document.getElementById('choiceLocalInfo').textContent = `아이템 ${localS.n}개 · 즐겨찾기 ${localS.fav}개`;
+    document.getElementById('choiceCloudInfo').textContent = `아이템 ${cloudS.n}개 · 즐겨찾기 ${cloudS.fav}개`;
+    ov.style.display='flex';
+    const done=(v)=>{ ov.style.display='none'; resolve(v); };
+    document.getElementById('choiceLocal').onclick=()=>done('local');
+    document.getElementById('choiceCloud').onclick=()=>done('cloud');
+  });
+}
+function getOwner(){ try{ return localStorage.getItem('ms_owner'); }catch(e){ return null; } }
+function setOwner(v){ try{ if(v) localStorage.setItem('ms_owner', v); else localStorage.removeItem('ms_owner'); }catch(e){} }
+
 onAuthStateChanged(auth, async (user)=>{
   currentUser = user;
   updateAuthUI();
-  if(user){
-    try{
-      const snap = await getDoc(doc(db,'users',user.uid));
-      if(snap.exists() && snap.data().data){
-        applyLoadedState(snap.data().data);
+  if(!user){ setOwner(null); return; }
+  syncPaused = true;
+  try{
+    const snap = await getDoc(doc(db,'users',user.uid));
+    const cloudJson = (snap.exists() && snap.data().data) ? snap.data().data : null;
+    const localJson = currentStateJson();
+    const localS = dataSummary(localJson);
+    if(!cloudJson){
+      await setDoc(doc(db,'users',user.uid), {data: localJson, updatedAt: Date.now()});
+    } else if(getOwner()===user.uid || !hasData(localS) || normalizeState(localJson)===normalizeState(cloudJson)){
+      applyLoadedState(cloudJson);
+      await localSet(currentStateJson());
+    } else {
+      const choice = await askChoice(localS, dataSummary(cloudJson));
+      if(choice==='cloud'){
+        applyLoadedState(cloudJson);
         await localSet(currentStateJson());
       } else {
-        await setDoc(doc(db,'users',user.uid), {data: currentStateJson(), updatedAt: Date.now()});
+        await setDoc(doc(db,'users',user.uid), {data: localJson, updatedAt: Date.now()});
       }
-      render();
-    }catch(e){
-      console.error('클라우드 동기화 실패', e);
-      document.getElementById('syncnote').textContent = '동기화 실패 (인터넷 연결/규칙 확인 필요)';
     }
+    setOwner(user.uid);
+    render();
+  }catch(e){
+    console.error('클라우드 동기화 실패', e);
+    document.getElementById('syncnote').textContent = '동기화 실패 (인터넷 연결/규칙 확인 필요)';
+  }finally{
+    syncPaused = false;
   }
 });
 
